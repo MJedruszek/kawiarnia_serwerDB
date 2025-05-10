@@ -3,6 +3,8 @@ from contextlib import contextmanager
 
 #poniższy kod stworzy bazę danych i umożliwi nawiązanie z nią połączenia
 
+DBNAME = "cafe.db" #jeśli robimy test, można zmienić nazwę na inną
+
 create_table_categories = """
 CREATE TABLE IF NOT EXISTS Categories (
     ID_category INTEGER PRIMARY KEY,
