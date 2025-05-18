@@ -41,12 +41,10 @@ s_get_all_staff ="""
         phone_number,
         mail
     FROM Staff
-    ORDER BY employee_name
+    ORDER BY ID_employee
 """
 
 #gettery (pojedynczego):#########################################################################################
-
-#create:#########################################################################################################
 
 #delete:#########################################################################################################
 
@@ -83,6 +81,52 @@ async def handle_get_all_staff(websocket: WebSocket):
 #gettery (pojedynczego):#########################################################################################
 
 #create:#########################################################################################################
+async def handle_create_staff(websocket: WebSocket, data):
+    with get_db() as conn:
+        try:
+            cursor = conn.cursor()
+            #dodajemy nowego pracownika
+            cursor.execute('''
+                            INSERT INTO Staff (
+                                employee_name, 
+                                job_title, 
+                                phone_number, 
+                                mail
+                            ) VALUES (?, ?, ?, ?)
+                            RETURNING ID_employee
+                        ''',(
+                           data['name'],
+                           data['job'],
+                           data['phone'],
+                           data['mail']))
+            
+            new_id = cursor.fetchone()[0]
+            conn.commit()
+            #informujemy o tym zainteresowanych
+            await manager.broadcast({
+                "type": "staff_created",
+                "id": new_id,
+                "name": data['name']
+            })
+
+            cursor.execute('''
+                SELECT * FROM Staff WHERE ID_employee = ?
+            ''', (new_id))
+
+        #jeśli już mamy tę osobę w bazie
+        except sqlite3.IntegrityError as e:
+            await websocket.send_json({
+                "type": "error",
+                "message": "Email or phone already exists"
+            })
+        #jeśli to baza się wykrzaczyła
+        except sqlite3.Error as e:
+            await websocket.send_json({
+                "type": "error",
+                "message": f"Database error: {str(e)}"
+            })
+
+
 
 #delete:#########################################################################################################
 
@@ -111,6 +155,8 @@ async def websocket_endpoint(websocket: WebSocket):
             #zajmij się requestem - każdy w osobnym ifie (nazwa requesta ta sama, co handler)
             if data['action'] == 'get_all_staff':
                 await handle_get_all_staff(websocket)
+            elif data['action'] == 'create_staff':
+                await handle_create_staff(websocket, data)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono
