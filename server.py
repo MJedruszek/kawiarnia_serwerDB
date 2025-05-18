@@ -44,8 +44,6 @@ s_get_all_staff ="""
     ORDER BY ID_employee
 """
 
-#gettery (pojedynczego):#########################################################################################
-
 #delete:#########################################################################################################
 
 #update:#########################################################################################################
@@ -79,7 +77,44 @@ async def handle_get_all_staff(websocket: WebSocket):
             })
             
 #gettery (pojedynczego):#########################################################################################
+async def handle_get_one_staff(websocket: WebSocket, data):
+    with get_db() as conn:
+        try:
+            staff_id = data['staff_id']
+            cursor = conn.execute('''
+                SELECT 
+                    ID_employee,
+                    employee_name,
+                    job_title,
+                    phone_number,
+                    mail
+                FROM Staff
+                WHERE ID_employee = ?
+            ''', (staff_id,))
 
+            staff = cursor.fetchone()
+
+            if staff:
+                await websocket.send_json({
+                    "type": "staff_details",
+                    "data": {
+                        "id": staff["ID_employee"],
+                        "name": staff["employee_name"],
+                        "job": staff["job_title"],
+                        "phone": staff["Phone_number"],
+                        "mail": staff["mail"]
+                    } 
+                })
+            else:
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Staff with ID {staff_id} not found"
+                })
+        except sqlite3.Error as e:
+            await websocket.send_json({
+                "type": "error",
+                "message": f"Database error: {str(e)}"
+            })
 #create:#########################################################################################################
 async def handle_create_staff(websocket: WebSocket, data):
     with get_db() as conn:
@@ -157,6 +192,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 await handle_get_all_staff(websocket)
             elif data['action'] == 'create_staff':
                 await handle_create_staff(websocket, data)
+            elif data['action'] == 'get_one_staff':
+                await handle_get_one_staff(websocket, data)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono

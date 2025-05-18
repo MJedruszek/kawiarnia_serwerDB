@@ -50,7 +50,31 @@ async def test_create_staff():
         else:
             print("Error:", data.get("message", "Unknown error"))
 
+async def test_one_staff_query(staff_id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print(f"\nFetching staff ID {staff_id}...")
+        await websocket.send(json.dumps({
+            "action": "get_one_staff",
+            "staff_id": staff_id
+        }))
+    
+        response = await websocket.recv()
+        data = json.loads(response)
+
+        if data.get("type") == "staff_details":
+            staff = data["data"]
+            print("\nStaff Details:")
+            print(f"ID: {staff['id']}")
+            print(f"Name: {staff['name']}")
+            print(f"Position: {staff['job']}")
+            print(f"Phone: {staff['phone']}")
+            print(f"Email: {staff['mail']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
 
 #asyncio.get_event_loop().run_until_complete(test_staff_query())
-asyncio.get_event_loop().run_until_complete(test_create_staff())
-asyncio.get_event_loop().run_until_complete(test_staff_query())
+#asyncio.get_event_loop().run_until_complete(test_create_staff())
+#asyncio.get_event_loop().run_until_complete(test_staff_query())
+asyncio.get_event_loop().run_until_complete(test_one_staff_query(6))
