@@ -139,7 +139,8 @@ async def handle_create_staff(websocket: WebSocket, data):
             conn.commit()
             #informujemy o tym zainteresowanych
             await manager.broadcast({
-                "type": "staff_created",
+                "type": "staff_updated",
+                "action": "created",
                 "id": new_id,
                 "name": data['name']
             })
@@ -164,6 +165,34 @@ async def handle_create_staff(websocket: WebSocket, data):
 
 
 #delete:#########################################################################################################
+async def handle_delete_staff(websocket: WebSocket, data):
+    with get_db() as conn:
+        try:
+            staff_id = data['staff_id']
+            #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
+            cursor = conn.execute('SELECT 1 FROM Staff WHERE ID_employee = ?', (staff_id,))
+            if not cursor.fetchone():
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Staff with ID {staff_id} not found"
+                })
+                return
+            #jeśli tak, kontynuuj
+            conn.execute('DELETE FROM Staff WHERE ID_employee = ?', (staff_id,))
+            conn.commit()
+            #poinformuj zainteresowanych o zmianie
+            await manager.broadcast({
+                "type": "staff_updated",
+                "action": "deleted",
+                "id": staff_id
+            })
+        except sqlite3.Error as e:
+            await websocket.send_json({
+                "type": "error",
+                "message": f"Database error: {str(e)}"
+            })
+
+
 
 #update:#########################################################################################################
 
@@ -194,6 +223,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 await handle_create_staff(websocket, data)
             elif data['action'] == 'get_one_staff':
                 await handle_get_one_staff(websocket, data)
+            elif data['action'] == 'delete_staff':
+                await handle_delete_staff(websocket, data)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono
