@@ -4,10 +4,11 @@ import asyncio
 import json
 from cafe_db_setup import get_db, init_db
 from contextlib import asynccontextmanager
-import sqlite3
+import mysql.connector
 
 #poniższy kod stworzy serwer za pomocą websockets i umożliwi połączenie z nim, a także podstawowe interakcje CRUD
-
+#DO WPISYWANIA W TERMINAL:
+#uvicorn server:app --reload --host 0.0.0.0 --port 8000
 #klasa sterująca połączeniem z websockets
 class ConnectionManager:
     #inicjalizacja połączenia (pustego)
@@ -30,58 +31,14 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-                                #stringi zawierające query do SQLite
-
-#gettery (wszystkiego):##########################################################################################
-s_get_all_staff ="""
-    SELECT 
-        ID_employee,
-        employee_name,
-        job_title,
-        phone_number,
-        mail
-    FROM Staff
-    ORDER BY ID_employee
-"""
-
-#delete:#########################################################################################################
-
-#update:#########################################################################################################
-
                                 #funkcje potrzebne do wymiany dancyh z bazą:
 #gettery (wszystkiego):##########################################################################################
 async def handle_get_all_staff(websocket: WebSocket):
     with get_db() as conn:
         try:
-            #wykonaj polecenie na bazie (pobierz dane)
-            cursor = conn.execute(s_get_all_staff)
-            staff_members = []
-            #wstaw dane do tablicy staff_members
-            for s in cursor.fetchall():
-                staff_members.append( {
-                    "id": s["ID_employee"],
-                    "name": s["employee_name"],
-                    "job": s["job_title"],
-                    "phone": s["Phone_number"],
-                    "mail": s["mail"]
-                } )
-            #wyślij dane w postaci pliku json
-            await websocket.send_json({
-                "type": "all_staff_data",
-                "data": staff_members
-            })
-        except sqlite3.Error as e:
-            await websocket.send_json({
-                "type": "error",
-                "message": f"Database error: {str(e)}"
-            })
-            
-#gettery (pojedynczego):#########################################################################################
-async def handle_get_one_staff(websocket: WebSocket, data):
-    with get_db() as conn:
-        try:
-            staff_id = data['staff_id']
-            cursor = conn.execute('''
+            cursor = conn.cursor(dictionary=True)
+
+            cursor.execute("""
                 SELECT 
                     ID_employee,
                     employee_name,
@@ -89,8 +46,47 @@ async def handle_get_one_staff(websocket: WebSocket, data):
                     phone_number,
                     mail
                 FROM Staff
-                WHERE ID_employee = ?
-            ''', (staff_id,))
+                ORDER BY ID_employee
+            """, )
+
+            staff_members = []
+            #wstaw dane do tablicy staff_members
+            for s in cursor.fetchall():
+                staff_members.append( {
+                    "id": s["ID_employee"],
+                    "name": s["employee_name"],
+                    "job": s["job_title"],
+                    "phone": s["phone_number"],
+                    "mail": s["mail"]
+                } )            
+            #wyślij dane w postaci pliku json
+            await websocket.send_json({
+                "type": "all_staff_data",
+                "data": staff_members
+            })
+        except mysql.connector.Error as err:
+            await websocket.send_json({
+                "type": "error",
+                "message": f"Database error: {err}"
+            })
+            
+#gettery (pojedynczego):#########################################################################################
+async def handle_get_one_staff(websocket: WebSocket, data):
+    with get_db() as conn:
+        try:
+            cursor = conn.cursor(dictionary=True)
+            staff_id = data['staff_id']
+
+            cursor.execute("""
+                SELECT 
+                    ID_employee,
+                    employee_name,
+                    job_title,
+                    phone_number,
+                    mail
+                FROM Staff
+                WHERE ID_employee = %s
+            """, (staff_id,))
 
             staff = cursor.fetchone()
 
@@ -110,32 +106,28 @@ async def handle_get_one_staff(websocket: WebSocket, data):
                     "type": "error",
                     "message": f"Staff with ID {staff_id} not found"
                 })
-        except sqlite3.Error as e:
+                
+                
+        except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {str(e)}"
+                "message": f"Database error: {err}"
             })
 #create:#########################################################################################################
 async def handle_create_staff(websocket: WebSocket, data):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
+            cursor.execute("START TRANSACTION")
             #dodajemy nowego pracownika
-            cursor.execute('''
-                            INSERT INTO Staff (
-                                employee_name, 
-                                job_title, 
-                                phone_number, 
-                                mail
-                            ) VALUES (?, ?, ?, ?)
-                            RETURNING ID_employee
-                        ''',(
-                           data['name'],
-                           data['job'],
-                           data['phone'],
-                           data['mail']))
-            
-            new_id = cursor.fetchone()[0]
+            cursor.execute("INSERT INTO Staff (employee_name, job_title, phone_number, mail) "
+                "VALUES (%s, %s, %s, %s)",(
+                            data['name'],
+                            data['job'],
+                            data['phone'],
+                            data['mail']))
+                
+            new_id = cursor.lastrowid
             conn.commit()
             #informujemy o tym zainteresowanych
             await manager.broadcast({
@@ -145,22 +137,10 @@ async def handle_create_staff(websocket: WebSocket, data):
                 "name": data['name']
             })
 
-            cursor.execute('''
-                SELECT * FROM Staff WHERE ID_employee = ?
-            ''', (new_id))
-
-        #jeśli już mamy tę osobę w bazie
-        except sqlite3.IntegrityError as e:
-            await websocket.send_json({
-                "type": "error",
-                "message": "Email or phone already exists"
-            })
-        #jeśli to baza się wykrzaczyła
-        except sqlite3.Error as e:
-            await websocket.send_json({
-                "type": "error",
-                "message": f"Database error: {str(e)}"
-            })
+            
+        except mysql.connector.Error as err:
+            if conn: conn.rollback()
+            print(f"Error: {err}")
 
 
 
@@ -168,9 +148,11 @@ async def handle_create_staff(websocket: WebSocket, data):
 async def handle_delete_staff(websocket: WebSocket, data):
     with get_db() as conn:
         try:
+            cursor = conn.cursor()
             staff_id = data['staff_id']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
-            cursor = conn.execute('SELECT 1 FROM Staff WHERE ID_employee = ?', (staff_id,))
+            cursor.execute("SELECT 1 FROM Staff WHERE ID_employee = %s", (staff_id,))
+
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
@@ -178,7 +160,7 @@ async def handle_delete_staff(websocket: WebSocket, data):
                 })
                 return
             #jeśli tak, kontynuuj
-            conn.execute('DELETE FROM Staff WHERE ID_employee = ?', (staff_id,))
+            cursor.execute("DELETE FROM Staff WHERE ID_employee = %s", (staff_id,))
             conn.commit()
             #poinformuj zainteresowanych o zmianie
             await manager.broadcast({
@@ -186,20 +168,19 @@ async def handle_delete_staff(websocket: WebSocket, data):
                 "action": "deleted",
                 "id": staff_id
             })
-        except sqlite3.Error as e:
+        except mysql.connector.Error as err:
+            if conn: conn.rollback()
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {str(e)}"
+                "message": f"Database error: {err}"
             })
-
-
 
 #update:#########################################################################################################
 
                                 #Funkcje bezpośrednio do działania API:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
+    #init_db()
     yield
     
 
@@ -214,7 +195,8 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             #odbierz dane od wejścia (request)
-            data = await websocket.receive_json()
+            raw_data = await websocket.receive_text()
+            data = json.loads(raw_data)
 
             #zajmij się requestem - każdy w osobnym ifie (nazwa requesta ta sama, co handler)
             if data['action'] == 'get_all_staff':

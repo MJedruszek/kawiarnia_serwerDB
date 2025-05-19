@@ -34,10 +34,10 @@ async def test_create_staff():
         print("\nCreating new staff member...")
         await websocket.send(json.dumps({
             "action": "create_staff",
-            "name": "Henryk Sienkiewicz",
-            "job": "Waiter",
-            "phone": "625416482",
-            "mail": "mickiewicz.gorszy@google.com"
+            "name": "Adam Mickiewicz",
+            "job": "Barista",
+            "phone": "123456789",
+            "mail": "slowacki.ssie@google.com"
         }))
         
         response = await websocket.recv()
@@ -108,7 +108,8 @@ async def test_delete_staff(staff_id):
 
 asyncio.get_event_loop().run_until_complete(test_staff_query())
 asyncio.get_event_loop().run_until_complete(test_create_staff())
-#asyncio.get_event_loop().run_until_complete(test_one_staff_query(6))
-#asyncio.get_event_loop().run_until_complete(test_delete_staff(1))
+#asyncio.get_event_loop().run_until_complete(test_one_staff_query(2))
+#asyncio.get_event_loop().run_until_complete(test_delete_staff(2))
 #asyncio.get_event_loop().run_until_complete(test_staff_query())
 
+asyncio.get_event_loop().run_until_complete(test_staff_query())
