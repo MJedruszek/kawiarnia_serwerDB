@@ -31,8 +31,8 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-                                #funkcje potrzebne do wymiany dancyh z bazą:
-#gettery (wszystkiego):##########################################################################################
+                                        #Funkcje do staff:
+
 async def handle_get_all_staff(websocket: WebSocket):
     with get_db() as conn:
         try:
@@ -70,7 +70,6 @@ async def handle_get_all_staff(websocket: WebSocket):
                 "message": f"Database error: {err}"
             })
             
-#gettery (pojedynczego):#########################################################################################
 async def handle_get_one_staff(websocket: WebSocket, data):
     with get_db() as conn:
         try:
@@ -113,7 +112,7 @@ async def handle_get_one_staff(websocket: WebSocket, data):
                 "type": "error",
                 "message": f"Database error: {err}"
             })
-#create:#########################################################################################################
+
 async def handle_create_staff(websocket: WebSocket, data):
     with get_db() as conn:
         try:
@@ -142,9 +141,6 @@ async def handle_create_staff(websocket: WebSocket, data):
             if conn: conn.rollback()
             print(f"Error: {err}")
 
-
-
-#delete:#########################################################################################################
 async def handle_delete_staff(websocket: WebSocket, data):
     with get_db() as conn:
         try:
@@ -175,7 +171,50 @@ async def handle_delete_staff(websocket: WebSocket, data):
                 "message": f"Database error: {err}"
             })
 
-#update:#########################################################################################################
+async def handle_edit_staff(websocket: WebSocket, data):
+    with get_db() as conn:
+        try:
+            cursor = conn.cursor()
+            staff_id = data['id']
+            #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
+            cursor.execute("SELECT 1 FROM Staff WHERE ID_employee = %s", (staff_id,))
+
+            if not cursor.fetchone():
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Staff with ID {staff_id} not found"
+                })
+                return
+            #jeśli tak, kontynuuj
+            cursor.execute("START TRANSACTION")
+            #edytujemy pracownika
+            cursor.execute("""
+                            UPDATE Staff
+                            SET employee_name = %s,
+                                job_title = %s,
+                                phone_number = %s,
+                                mail = %s
+                            WHERE ID_employee = %s
+                        """,(
+                            data['name'],
+                            data['job'],
+                            data['phone'],
+                            data['mail'],
+                            data['id']))
+
+            conn.commit()
+            #informujemy o tym zainteresowanych
+            await manager.broadcast({
+                "type": "staff_updated",
+                "action": "edited",
+                "id": staff_id,
+                "name": data['name']
+            })
+
+            
+        except mysql.connector.Error as err:
+            if conn: conn.rollback()
+            print(f"Error: {err}")
 
                                 #Funkcje bezpośrednio do działania API:
 @asynccontextmanager
@@ -207,6 +246,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 await handle_get_one_staff(websocket, data)
             elif data['action'] == 'delete_staff':
                 await handle_delete_staff(websocket, data)
+            elif data['action'] == 'edit_staff':
+                await handle_edit_staff(websocket, data)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono

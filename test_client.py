@@ -105,11 +105,35 @@ async def test_delete_staff(staff_id):
             print("\nDeletion failed:")
             print(f"Reason: {data.get('message')}")
 
+async def test_edit_staff(staff_id):
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nCreating new staff member...")
+        await websocket.send(json.dumps({
+            "action": "edit_staff",
+            "name": "Adam Mickiewicz",
+            "job": "Barista",
+            "phone": "123456789",
+            "mail": "slowacki.najgorszy@google.com",
+            "id" : staff_id
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "staff_updated" and data.get("action") == "edited":
+            print("\nStaff Edited:")
+            print(f"ID: {data['id']}")
+            print(f"Name: {data['name']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
 
 asyncio.get_event_loop().run_until_complete(test_staff_query())
-asyncio.get_event_loop().run_until_complete(test_create_staff())
+#asyncio.get_event_loop().run_until_complete(test_create_staff())
 #asyncio.get_event_loop().run_until_complete(test_one_staff_query(2))
 #asyncio.get_event_loop().run_until_complete(test_delete_staff(2))
 #asyncio.get_event_loop().run_until_complete(test_staff_query())
-
+asyncio.get_event_loop().run_until_complete(test_edit_staff(2))
 asyncio.get_event_loop().run_until_complete(test_staff_query())
