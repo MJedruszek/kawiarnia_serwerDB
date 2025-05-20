@@ -1,4 +1,4 @@
 *.db
 test_db.py
 baza.zip
-*.pyc
+__pychache__/
