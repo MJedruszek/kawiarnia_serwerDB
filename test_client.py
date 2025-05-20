@@ -155,9 +155,9 @@ async def test_categories_query():
 
         if data.get("type") == "all_category_data":
             print("\nAll Categories:")
-            for staff in data["data"]:
-                print(f"\nID: {staff['id']}")
-                print(f"Name: {staff['name']}")
+            for category in data["data"]:
+                print(f"\nID: {category['id']}")
+                print(f"Name: {category['name']}")
         else:
             print("Error:", data.get("message", "Unknown error"))
 
@@ -203,5 +203,73 @@ async def test_delete_category(category_id):
 
 
 #asyncio.get_event_loop().run_until_complete(test_categories_query())
-asyncio.get_event_loop().run_until_complete(test_delete_category(1))
-asyncio.get_event_loop().run_until_complete(test_categories_query())
+#asyncio.get_event_loop().run_until_complete(test_delete_category(1))
+#asyncio.get_event_loop().run_until_complete(test_categories_query())
+
+
+                                    #DO order_status
+async def test_statuses_query():
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print("Requesting status data...")
+        await websocket.send(json.dumps({
+            "action": "get_all_statuses"
+        }))
+
+        response = await websocket.recv()
+        data = json.loads(response)
+        print("Received data:")
+
+        if data.get("type") == "all_statuses_data":
+            print("\nAll statuses:")
+            for status in data["data"]:
+                print(f"\nID: {status['id']}")
+                print(f"Status: {status['status']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_create_status():
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nCreating new status...")
+        await websocket.send(json.dumps({
+            "action": "create_status",
+            "status": "Not ready"
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "status_updated" and data.get("action") == "created":
+            print("\nNew status Created:")
+            print(f"ID: {data['id']}")
+            print(f"Status: {data['status']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_delete_status(status_id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print(f"\nAttempting to delete status ID {status_id}...")
+        #wyślij request
+        await websocket.send(json.dumps({
+            "action": "delete_status",
+            "status_id": status_id
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+
+        if data.get("type") == "status_updated" and data.get("action") == "deleted":
+            print(f"\nSuccessfully deleted status ID {status_id}")
+        else:
+            print("\nDeletion failed:")
+            print(f"Reason: {data.get('message')}")
+
+asyncio.get_event_loop().run_until_complete(test_statuses_query())
+#asyncio.get_event_loop().run_until_complete(test_create_status())
+asyncio.get_event_loop().run_until_complete(test_delete_status(2))
+asyncio.get_event_loop().run_until_complete(test_statuses_query())

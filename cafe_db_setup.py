@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS Order_Products (
 
 create_table_order_status = """
 CREATE TABLE IF NOT EXISTS order_status (
-    ID_o_status INT PRIMARY KEY,
+    ID_o_status INT AUTO_INCREMENT PRIMARY KEY,
     status VARCHAR(255)
 );
 """

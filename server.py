@@ -10,6 +10,7 @@ import mysql.connector
 #importy z plików do queries
 import staff_queries
 import categories_queries
+import order_status_queries
 
 #poniższy kod stworzy serwer za pomocą websockets i umożliwi połączenie z nim, a także podstawowe interakcje CRUD
 #DO WPISYWANIA W TERMINAL:
@@ -77,6 +78,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 await categories_queries.handle_create_category(websocket, data, manager)
             elif data['action'] == 'delete_category':
                 await categories_queries.handle_delete_category(websocket, data, manager)
+            #STATUSY
+            elif data['action'] == 'get_all_statuses':
+                await order_status_queries.handle_get_all_statuses(websocket)
+            elif data['action'] == 'create_status':
+                await order_status_queries.handle_create_status(websocket, data, manager)
+            elif data['action'] == 'delete_status':
+                await order_status_queries.handle_delete_status(websocket, data, manager)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono
