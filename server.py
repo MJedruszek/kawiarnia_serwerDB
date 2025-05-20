@@ -39,9 +39,10 @@ manager = ConnectionManager()
                                 #Funkcje bezpośrednio do działania API:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    #init_db()
+    init_db()
     yield
     
+
 
 
 app = FastAPI(lifespan=lifespan)

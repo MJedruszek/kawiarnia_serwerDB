@@ -101,6 +101,7 @@ connection_pool = pooling.MySQLConnectionPool(
 
 #funkcja inicjalizująca bazę danych
 def initialize(cursor):
+    cursor.execute("CREATE DATABASE IF NOT EXISTS cafe_db")
     cursor.execute(create_table_categories)
     cursor.execute(create_table_staff)
     cursor.execute(create_table_tables)
