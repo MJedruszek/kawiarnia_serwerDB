@@ -130,10 +130,78 @@ async def test_edit_staff(staff_id):
             print("Error:", data.get("message", "Unknown error"))
 
 
-asyncio.get_event_loop().run_until_complete(test_staff_query())
-asyncio.get_event_loop().run_until_complete(test_create_staff())
-asyncio.get_event_loop().run_until_complete(test_one_staff_query(2))
+#asyncio.get_event_loop().run_until_complete(test_staff_query())
+#asyncio.get_event_loop().run_until_complete(test_create_staff())
+#asyncio.get_event_loop().run_until_complete(test_one_staff_query(2))
 #asyncio.get_event_loop().run_until_complete(test_delete_staff(2))
 #asyncio.get_event_loop().run_until_complete(test_staff_query())
 #asyncio.get_event_loop().run_until_complete(test_edit_staff(2))
-asyncio.get_event_loop().run_until_complete(test_staff_query())
+#asyncio.get_event_loop().run_until_complete(test_staff_query())
+
+
+                                    #DO CATEGORIES
+async def test_categories_query():
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print("Requesting category data...")
+        await websocket.send(json.dumps({
+            "action": "get_all_categories"
+        }))
+
+        response = await websocket.recv()
+        data = json.loads(response)
+        print("Received data:")
+
+        if data.get("type") == "all_category_data":
+            print("\nAll Categories:")
+            for staff in data["data"]:
+                print(f"\nID: {staff['id']}")
+                print(f"Name: {staff['name']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_create_category():
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nCreating new category...")
+        await websocket.send(json.dumps({
+            "action": "create_category",
+            "name": "Cold Drink"
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "category_updated" and data.get("action") == "created":
+            print("\nNew Category Created:")
+            print(f"ID: {data['id']}")
+            print(f"Name: {data['name']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_delete_category(category_id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print(f"\nAttempting to delete category ID {category_id}...")
+        #wyślij request
+        await websocket.send(json.dumps({
+            "action": "delete_category",
+            "category_id": category_id
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+
+        if data.get("type") == "category_updated" and data.get("action") == "deleted":
+            print(f"\nSuccessfully deleted category ID {category_id}")
+        else:
+            print("\nDeletion failed:")
+            print(f"Reason: {data.get('message')}")
+
+
+#asyncio.get_event_loop().run_until_complete(test_categories_query())
+asyncio.get_event_loop().run_until_complete(test_delete_category(1))
+asyncio.get_event_loop().run_until_complete(test_categories_query())

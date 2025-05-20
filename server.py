@@ -6,8 +6,10 @@ from cafe_db_setup import get_db, init_db
 from contextlib import asynccontextmanager
 import mysql.connector
 
+
 #importy z plików do queries
 import staff_queries
+import categories_queries
 
 #poniższy kod stworzy serwer za pomocą websockets i umożliwi połączenie z nim, a także podstawowe interakcje CRUD
 #DO WPISYWANIA W TERMINAL:
@@ -56,6 +58,7 @@ async def websocket_endpoint(websocket: WebSocket):
             data = json.loads(raw_data)
 
             #zajmij się requestem - każdy w osobnym ifie (nazwa requesta ta sama, co handler)
+            #STAFF
             if data['action'] == 'get_all_staff':
                 await staff_queries.handle_get_all_staff(websocket)
             elif data['action'] == 'create_staff':
@@ -66,6 +69,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 await staff_queries.handle_delete_staff(websocket, data, manager)
             elif data['action'] == 'edit_staff':
                 await staff_queries.handle_edit_staff(websocket, data, manager)
+            #KATEGORIE
+            elif data['action'] == 'get_all_categories':
+                await categories_queries.handle_get_all_categories(websocket)
+            elif data['action'] == 'create_category':
+                await categories_queries.handle_create_category(websocket, data, manager)
+            elif data['action'] == 'delete_category':
+                await categories_queries.handle_delete_category(websocket, data, manager)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono
