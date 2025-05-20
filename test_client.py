@@ -269,7 +269,77 @@ async def test_delete_status(status_id):
             print("\nDeletion failed:")
             print(f"Reason: {data.get('message')}")
 
-asyncio.get_event_loop().run_until_complete(test_statuses_query())
-#asyncio.get_event_loop().run_until_complete(test_create_status())
-asyncio.get_event_loop().run_until_complete(test_delete_status(2))
-asyncio.get_event_loop().run_until_complete(test_statuses_query())
+# asyncio.get_event_loop().run_until_complete(test_statuses_query())
+# #asyncio.get_event_loop().run_until_complete(test_create_status())
+# asyncio.get_event_loop().run_until_complete(test_delete_status(2))
+# asyncio.get_event_loop().run_until_complete(test_statuses_query())
+
+                                    #DO Tables
+async def test_tables_query():
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print("Requesting status data...")
+        await websocket.send(json.dumps({
+            "action": "get_all_tables"
+        }))
+
+        response = await websocket.recv()
+        data = json.loads(response)
+        print("Received data:")
+
+        if data.get("type") == "all_tables_data":
+            print("\nAll tables:")
+            for table in data["data"]:
+                print(f"\nID: {table['id']}")
+                print(f"Outside: {table['outside']}")
+                print(f"Seats: {table['seats']}")
+                print(f"Is Empty: {table['is_empty']}")
+                
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_create_table():
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nCreating new table...")
+        await websocket.send(json.dumps({
+            "action": "create_table",
+            "outside": 1,
+            "seats": 9
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "tables_updated" and data.get("action") == "created":
+            print("\nNew table Created:")
+            print(f"ID: {data['id']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_delete_table(table_id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print(f"\nAttempting to delete table ID {table_id}...")
+        #wyślij request
+        await websocket.send(json.dumps({
+            "action": "delete_table",
+            "table_id": table_id
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+
+        if data.get("type") == "tables_updated" and data.get("action") == "deleted":
+            print(f"\nSuccessfully deleted table ID {table_id}")
+        else:
+            print("\nDeletion failed:")
+            print(f"Reason: {data.get('message')}")
+
+asyncio.get_event_loop().run_until_complete(test_tables_query())
+#asyncio.get_event_loop().run_until_complete(test_create_table())
+asyncio.get_event_loop().run_until_complete(test_delete_table(2))
+asyncio.get_event_loop().run_until_complete(test_tables_query())
