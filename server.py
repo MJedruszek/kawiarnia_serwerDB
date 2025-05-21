@@ -14,6 +14,7 @@ import order_status_queries
 import table_queries
 import schedule_queries
 import order_queries
+import products_queries
 
 #poniższy kod stworzy serwer za pomocą websockets i umożliwi połączenie z nim, a także podstawowe interakcje CRUD
 #DO WPISYWANIA W TERMINAL:
@@ -121,6 +122,19 @@ async def websocket_endpoint(websocket: WebSocket):
                 await order_queries.handle_edit_order(websocket, data, manager)
             elif data['action'] == 'change_order_status':
                 await order_queries.handle_change_order_status(websocket, data, manager)
+            #PRODUKTY
+            elif data['action'] == 'get_all_products':
+                await products_queries.handle_get_all_products(websocket)
+            elif data['action'] == 'create_product':
+                await products_queries.handle_create_product(websocket, data, manager)
+            elif data['action'] == 'get_products_by_category':
+                await products_queries.handle_get_products_by_category(websocket, data)
+            elif data['action'] == 'delete_product':
+                await products_queries.handle_delete_product(websocket, data, manager)
+            elif data['action'] == 'edit_product':
+                await products_queries.handle_edit_product(websocket, data, manager)
+            elif data['action'] == 'get_product_by_id':
+                await products_queries.handle_get_one_product(websocket, data)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono

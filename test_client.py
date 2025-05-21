@@ -635,6 +635,177 @@ async def test_edit_order_status(order_id):
 #asyncio.get_event_loop().run_until_complete(test_delete_order(4))
 #asyncio.get_event_loop().run_until_complete(test_edit_order(3))
 #asyncio.get_event_loop().run_until_complete(test_edit_order_status(5))
-asyncio.get_event_loop().run_until_complete(test_get_order_by_statusID(2))
+#asyncio.get_event_loop().run_until_complete(test_get_order_by_statusID(2))
+#asyncio.get_event_loop().run_until_complete(test_order_query())
 
-asyncio.get_event_loop().run_until_complete(test_order_query())
+
+async def test_products_query():
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print("Requesting products data...")
+        await websocket.send(json.dumps({
+            "action": "get_all_products"
+        }))
+
+        response = await websocket.recv()
+        data = json.loads(response)
+        print("Received data:")
+
+        if data.get("type") == "all_products_data":
+            print("\nAll Products:")
+            for product in data["data"]:
+                print(f"\nID: {product['id']}")
+                print(f"Name: {product['name']}")
+                print(f"Price: {product['price']} zł")
+                print(f"Quantity: {product['quantity']}")
+                print(f"Prep time: {product['prep_time']} min")
+                print(f"Category: {product['ID_category']}, {product['category_name']}")
+                print(f"Expiration date: {product['expiration_date']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+        
+async def test_create_product():
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nCreating new staff member...")
+        await websocket.send(json.dumps({
+            "action": "create_product",
+            "name": "Iced Vanilla Late",
+            "price": 15.99,
+            "quantity": 10,
+            "prep_time": 3.0,
+            "expiration_date": "2025-05-31",
+            "ID_category": 4
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "products_updated" and data.get("action") == "created":
+            print("\nNew Product Created:")
+            print(f"ID: {data['id']}")
+            print(f"Name: {data['name']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_one_product_query(product_id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print(f"\nFetching product ID {product_id}...")
+        await websocket.send(json.dumps({
+            "action": "get_product_by_id",
+            "product_id": product_id
+        }))
+    
+        response = await websocket.recv()
+        data = json.loads(response)
+
+        if data.get("type") == "product_details":
+            product = data["data"]
+            print("\nProduct Details:")
+            print(f"\nID: {product['id']}")
+            print(f"Name: {product['name']}")
+            print(f"Price: {product['price']} zł")
+            print(f"Quantity: {product['quantity']}")
+            print(f"Prep time: {product['prep_time']} min")
+            print(f"Category: {product['ID_category']}, {product['category_name']}")
+            print(f"Expiration date: {product['expiration_date']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_delete_product(product_id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print(f"\nAttempting to delete product ID {product_id}...")
+
+        #sprawdź, czy faktycznie istnieje
+        await websocket.send(json.dumps({
+            "action": "get_product_by_id",
+            "product_id": product_id
+        }))
+        verify_response = await websocket.recv()
+        #jeśli nie, wypisz to i koniec
+        if json.loads(verify_response).get("type") == "error":
+            print(f"Cannot delete: Product ID {product_id} not found")
+            return
+        #jeśli tak, wyślij request
+        await websocket.send(json.dumps({
+            "action": "delete_product",
+            "product_id": product_id
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+
+        if data.get("type") == "products_updated" and data.get("action") == "deleted":
+            print(f"\nSuccessfully deleted product ID {product_id}")
+        else:
+            print("\nDeletion failed:")
+            print(f"Reason: {data.get('message')}")
+
+async def test_edit_product(product_id):
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nEditing product...")
+        await websocket.send(json.dumps({
+            "action": "edit_product",
+            "name": "Black coffee",
+            "price": 9.99,
+            "ID_category": 4,
+            "quantity": 20,
+            "prep_time": 2.0,
+            "expiration_date": "2025-06-14",
+            "id": product_id
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "products_updated" and data.get("action") == "edited":
+            print("\nProduct Edited:")
+            print(f"ID: {data['id']}")
+            print(f"Name: {data['name']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_get_products_by_category(id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print("Requesting products data...")
+        await websocket.send(json.dumps({
+            "action": "get_products_by_category",
+            "ID_category": id
+        }))
+
+        response = await websocket.recv()
+        data = json.loads(response)
+        print("Received data:")
+
+        if data.get("type") == "products_by_categories_data":
+            print(f"\nAll Producs with category:{data['category_name']}")
+            for product in data["data"]:
+                print(f"\nID: {product['id']}")
+                print(f"Name: {product['name']}")
+                print(f"Price: {product['price']} zł")
+                print(f"Quantity: {product['quantity']}")
+                print(f"Prep time: {product['prep_time']} min")
+                print(f"Expiration date: {product['expiration_date']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+#asyncio.get_event_loop().run_until_complete(test_products_query())
+#asyncio.get_event_loop().run_until_complete(test_create_product())
+#asyncio.get_event_loop().run_until_complete(test_create_product())
+#asyncio.get_event_loop().run_until_complete(test_one_product_query(2))
+#asyncio.get_event_loop().run_until_complete(test_delete_product(3))
+#asyncio.get_event_loop().run_until_complete(test_staff_query())
+#asyncio.get_event_loop().run_until_complete(test_edit_product(2))
+asyncio.get_event_loop().run_until_complete(test_get_products_by_category(4))
+asyncio.get_event_loop().run_until_complete(test_products_query())
