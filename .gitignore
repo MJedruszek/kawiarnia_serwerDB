@@ -1,4 +1,9 @@
 *.db
 test_db.py
 baza.zip
-__pychache__/
+__pycache__\categories_queries.cpython-311.pyc
+__pycache__\cafe_db_setup.cpython-311.pyc
+__pycache__\order_status_queries.cpython-311.pyc
+__pycache__\server.cpython-311.pyc
+__pycache__\staff_queries.cpython-311.pyc
+__pycache__\table_queries.cpython-311.pyc

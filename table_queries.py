@@ -49,7 +49,7 @@ async def handle_create_table(websocket: WebSocket, data, manager):
             cursor.execute("START TRANSACTION")
             #dodajemy nowego pracownika
             cursor.execute("INSERT INTO Tables (outside, seats, is_empty) "
-                "VALUE (%s, %s, 0)",(data['outside'],data['seats'],))
+                "VALUE (%s, %s, 1)",(data['outside'],data['seats'],))
                 
             new_id = cursor.lastrowid
             conn.commit()
@@ -94,3 +94,82 @@ async def handle_delete_table(websocket: WebSocket, data, manager):
                 "type": "error",
                 "message": f"Database error: {err}"
             })
+
+async def handle_edit_table(websocket: WebSocket, data, manager):
+    with get_db() as conn:
+        try:
+            cursor = conn.cursor()
+            table_id = data['id']
+            #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
+            cursor.execute("SELECT 1 FROM Tables WHERE ID_table = %s", (table_id,))
+
+            if not cursor.fetchone():
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Table with ID {table_id} not found"
+                })
+                return
+            #jeśli tak, kontynuuj
+            cursor.execute("START TRANSACTION")
+            #edytujemy pracownika
+            cursor.execute("""
+                            UPDATE Tables
+                            SET outside = %s,
+                                seats = %s,
+                                is_empty = 1
+                            WHERE ID_table = %s
+                        """,(
+                            data['outside'],
+                            data['seats'],
+                            data['id']))
+
+            conn.commit()
+            #informujemy o tym zainteresowanych
+            await manager.broadcast({
+                "type": "tables_updated",
+                "action": "edited",
+                "id": table_id
+            })
+
+            
+        except mysql.connector.Error as err:
+            if conn: conn.rollback()
+            print(f"Error: {err}")
+
+async def handle_change_table_state(websocket: WebSocket, data, manager):
+    with get_db() as conn:
+        try:
+            cursor = conn.cursor()
+            table_id = data['id']
+            #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
+            cursor.execute("SELECT 1 FROM Tables WHERE ID_table = %s", (table_id,))
+
+            if not cursor.fetchone():
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Table with ID {table_id} not found"
+                })
+                return
+            #jeśli tak, kontynuuj
+            cursor.execute("START TRANSACTION")
+            #edytujemy pracownika
+            cursor.execute("""
+                            UPDATE Tables
+                            SET is_empty = %s
+                            WHERE ID_table = %s
+                        """,(
+                            data['is_empty'],
+                            data['id']))
+
+            conn.commit()
+            #informujemy o tym zainteresowanych
+            await manager.broadcast({
+                "type": "tables_updated",
+                "action": "edited",
+                "id": table_id
+            })
+
+            
+        except mysql.connector.Error as err:
+            if conn: conn.rollback()
+            print(f"Error: {err}")

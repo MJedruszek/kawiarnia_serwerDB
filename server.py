@@ -93,6 +93,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 await table_queries.handle_create_table(websocket, data, manager)
             elif data['action'] == 'delete_table':
                 await table_queries.handle_delete_table(websocket, data, manager)
+            elif data['action'] == 'edit_table':
+                await table_queries.handle_edit_table(websocket, data, manager)
+            elif data['action'] == 'change_table_state':
+                await table_queries.handle_change_table_state(websocket, data, manager)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono

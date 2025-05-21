@@ -306,8 +306,8 @@ async def test_create_table():
         print("\nCreating new table...")
         await websocket.send(json.dumps({
             "action": "create_table",
-            "outside": 1,
-            "seats": 9
+            "outside": 0,
+            "seats": 3
         }))
         
         response = await websocket.recv()
@@ -339,7 +339,50 @@ async def test_delete_table(table_id):
             print("\nDeletion failed:")
             print(f"Reason: {data.get('message')}")
 
+async def test_edit_table(table_id):
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nEditing a table...")
+        await websocket.send(json.dumps({
+            "action": "edit_table",
+            "id": table_id,
+            "outside": 0,
+            "seats": 4
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "tables_updated" and data.get("action") == "edited":
+            print("\nTable edited:")
+            print(f"ID: {data['id']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_edit_table_state(table_id):
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nEditing a table...")
+        await websocket.send(json.dumps({
+            "action": "change_table_state",
+            "id": table_id,
+            "is_empty": 0
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "tables_updated" and data.get("action") == "edited":
+            print("\nTable edited:")
+            print(f"ID: {data['id']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
 asyncio.get_event_loop().run_until_complete(test_tables_query())
-#asyncio.get_event_loop().run_until_complete(test_create_table())
-asyncio.get_event_loop().run_until_complete(test_delete_table(2))
+asyncio.get_event_loop().run_until_complete(test_create_table())
+asyncio.get_event_loop().run_until_complete(test_edit_table(1))
+asyncio.get_event_loop().run_until_complete(test_edit_table_state(3))
+#asyncio.get_event_loop().run_until_complete(test_delete_table(2))
 asyncio.get_event_loop().run_until_complete(test_tables_query())
