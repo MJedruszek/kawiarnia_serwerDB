@@ -807,5 +807,85 @@ async def test_get_products_by_category(id):
 #asyncio.get_event_loop().run_until_complete(test_delete_product(3))
 #asyncio.get_event_loop().run_until_complete(test_staff_query())
 #asyncio.get_event_loop().run_until_complete(test_edit_product(2))
-asyncio.get_event_loop().run_until_complete(test_get_products_by_category(4))
-asyncio.get_event_loop().run_until_complete(test_products_query())
+#asyncio.get_event_loop().run_until_complete(test_get_products_by_category(4))
+#asyncio.get_event_loop().run_until_complete(test_products_query())
+
+async def test_get_products_by_orderID(id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print("Requesting products data...")
+        await websocket.send(json.dumps({
+            "action": "get_products_by_orderID",
+            "ID_order": id
+        }))
+
+        response = await websocket.recv()
+        data = json.loads(response)
+        print("Received data:")
+
+        if data.get("type") == "products_by_orderID_data":
+            print(f"\nAll Products with order nr:{data['ID_order']}")
+            for product in data["data"]:
+                print(f"\nProduct: {product['ID_product']}, {product['product_name']}")
+                print(f"Price: {product['price']}")
+                print(f"Quantity: {product['quantity']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+
+async def test_create_order_product():
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nCreating new order product member...")
+        await websocket.send(json.dumps({
+            "action": "create_order_product",
+            "ID_order": 3,
+            "ID_product": 2,
+            "quantity": 1,
+            "price": 10.99
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "order_products_updated" and data.get("action") == "created":
+            print("\nNew Order Product Created:")
+            print(f"ID: {data['ID_order']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_delete_order_product(product_id, order_id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print(f"\nAttempting to delete product ID {product_id}, {order_id}...")
+
+        #wyślij request
+        await websocket.send(json.dumps({
+            "action": "delete_order_product",
+            "product_id": product_id,
+            "order_id": order_id
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+
+        if data.get("type") == "order_products_updated" and data.get("action") == "deleted":
+            print(f"\nSuccessfully deleted product ID {product_id}, {order_id}")
+        else:
+            print("\nDeletion failed:")
+            print(f"Reason: {data.get('message')}")
+
+asyncio.get_event_loop().run_until_complete(test_order_query())
+# asyncio.get_event_loop().run_until_complete(test_products_query())
+
+asyncio.get_event_loop().run_until_complete(test_delete_order_product(2,3))
+#asyncio.get_event_loop().run_until_complete(test_create_order_product())
+#asyncio.get_event_loop().run_until_complete(test_create_order_product())
+#asyncio.get_event_loop().run_until_complete(test_get_products_by_orderID(3))
+#asyncio.get_event_loop().run_until_complete(test_get_products_by_orderID(3))
+asyncio.get_event_loop().run_until_complete(test_order_query())
+
+

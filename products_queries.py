@@ -5,7 +5,7 @@ from cafe_db_setup import get_db, init_db
 from contextlib import asynccontextmanager
 import mysql.connector
 
-#pełny CRUD + getter pojedynczego pracownika
+#pełny CRUD + getter po kategorii
 
 async def handle_get_all_products(websocket: WebSocket):
     with get_db() as conn:
