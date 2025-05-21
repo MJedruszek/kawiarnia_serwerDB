@@ -12,6 +12,7 @@ import staff_queries
 import categories_queries
 import order_status_queries
 import table_queries
+import schedule_queries
 
 #poniższy kod stworzy serwer za pomocą websockets i umożliwi połączenie z nim, a także podstawowe interakcje CRUD
 #DO WPISYWANIA W TERMINAL:
@@ -97,6 +98,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 await table_queries.handle_edit_table(websocket, data, manager)
             elif data['action'] == 'change_table_state':
                 await table_queries.handle_change_table_state(websocket, data, manager)
+            #SCHEDULE
+            elif data['action'] == 'create_schedule':
+                await schedule_queries.handle_create_schedule(websocket, data, manager)
+            elif data['action'] == 'delete_schedule':
+                await schedule_queries.handle_delete_schedule(websocket, data, manager)
+            elif data['action'] == 'get_schedule_by_employee':
+                await schedule_queries.handle_get_schedule_by_employeeID(websocket, data)
+            elif data['action'] == 'get_schedule_by_date':
+                await schedule_queries.handle_get_schedule_by_date(websocket, data)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono

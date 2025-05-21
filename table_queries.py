@@ -5,7 +5,7 @@ from cafe_db_setup import get_db, init_db
 from contextlib import asynccontextmanager
 import mysql.connector
 
-#Create + Read + Delete
+#Create + Read + Delete + Update + Zmiana statusu stolika
 
 async def handle_get_all_tables(websocket: WebSocket):
     with get_db() as conn:

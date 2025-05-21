@@ -380,9 +380,108 @@ async def test_edit_table_state(table_id):
         else:
             print("Error:", data.get("message", "Unknown error"))
 
-asyncio.get_event_loop().run_until_complete(test_tables_query())
-asyncio.get_event_loop().run_until_complete(test_create_table())
-asyncio.get_event_loop().run_until_complete(test_edit_table(1))
-asyncio.get_event_loop().run_until_complete(test_edit_table_state(3))
-#asyncio.get_event_loop().run_until_complete(test_delete_table(2))
-asyncio.get_event_loop().run_until_complete(test_tables_query())
+# asyncio.get_event_loop().run_until_complete(test_tables_query())
+# asyncio.get_event_loop().run_until_complete(test_create_table())
+# asyncio.get_event_loop().run_until_complete(test_edit_table(1))
+# asyncio.get_event_loop().run_until_complete(test_edit_table_state(3))
+# #asyncio.get_event_loop().run_until_complete(test_delete_table(2))
+# asyncio.get_event_loop().run_until_complete(test_tables_query())
+
+                                    #DO SCHEDULE
+
+async def test_create_schedule():
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nCreating new schedule...")
+        await websocket.send(json.dumps({
+            "action": "create_schedule",
+            "date": "2025-10-11",
+            "ID_employee": 3,
+            "shift": "Evening"
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "schedule_updated" and data.get("action") == "created":
+            print("\nNew schedule Created:")
+            print(f"ID: {data['id']}")
+            print(f"Date: {data['date']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_delete_schedule(schedule_id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print(f"\nAttempting to delete schedule ID {schedule_id}...")
+        #wyślij request
+        await websocket.send(json.dumps({
+            "action": "delete_schedule",
+            "schedule_id": schedule_id
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+
+        if data.get("type") == "schedule_updated" and data.get("action") == "deleted":
+            print(f"\nSuccessfully deleted schedule ID {schedule_id}")
+        else:
+            print("\nDeletion failed:")
+            print(f"Reason: {data.get('message')}")
+
+async def test_get_schedule_by_staffID(id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print("Requesting schedule data by employee...")
+        await websocket.send(json.dumps({
+            "action": "get_schedule_by_employee",
+            "employee_id": id
+        }))
+
+        response = await websocket.recv()
+        data = json.loads(response)
+        print("Received data:")
+
+        if data.get("type") == "schedule_by_staff_data":
+            print(f"\nAll of {data['name']} scheduled shifts:")
+            for schedule in data["data"]:
+                print(f"\nID: {schedule['id']}")
+                print(f"Date: {schedule['date']}")
+                print(f"Shift: {schedule['shift']}")
+                
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_get_schedule_by_date(date):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print("Requesting schedule data by date...")
+        await websocket.send(json.dumps({
+            "action": "get_schedule_by_date",
+            "date": date
+        }))
+
+        response = await websocket.recv()
+        data = json.loads(response)
+        print("Received data:")
+
+        if data.get("type") == "schedule_by_date_data":
+            print(f"\nAll of the shifts scheduled for {date}:")
+            for schedule in data["data"]:
+                print(f"\nID: {schedule['id']}")
+                print(f"Employee: {schedule['employee_name']}")
+                print(f"Employee ID: {schedule['ID_employee']}")
+                print(f"Shift: {schedule['shift']}")
+                
+                
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+#asyncio.get_event_loop().run_until_complete(test_create_schedule())
+#asyncio.get_event_loop().run_until_complete(test_delete_schedule(5))
+#asyncio.get_event_loop().run_until_complete(test_get_schedule_by_date("2025-10-11"))
+#asyncio.get_event_loop().run_until_complete(test_get_schedule_by_staffID(1))
