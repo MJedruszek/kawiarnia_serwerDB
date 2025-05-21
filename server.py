@@ -13,6 +13,7 @@ import categories_queries
 import order_status_queries
 import table_queries
 import schedule_queries
+import order_queries
 
 #poniższy kod stworzy serwer za pomocą websockets i umożliwi połączenie z nim, a także podstawowe interakcje CRUD
 #DO WPISYWANIA W TERMINAL:
@@ -107,6 +108,19 @@ async def websocket_endpoint(websocket: WebSocket):
                 await schedule_queries.handle_get_schedule_by_employeeID(websocket, data)
             elif data['action'] == 'get_schedule_by_date':
                 await schedule_queries.handle_get_schedule_by_date(websocket, data)
+            #ZAMÓWIENIA
+            elif data['action'] == 'get_all_orders':
+                await order_queries.handle_get_all_orders(websocket)
+            elif data['action'] == 'create_order':
+                await order_queries.handle_create_order(websocket, data, manager)
+            elif data['action'] == 'get_orders_by_status':
+                await order_queries.handle_get_order_by_status(websocket, data)
+            elif data['action'] == 'delete_order':
+                await order_queries.handle_delete_order(websocket, data, manager)
+            elif data['action'] == 'edit_order':
+                await order_queries.handle_edit_order(websocket, data, manager)
+            elif data['action'] == 'change_order_status':
+                await order_queries.handle_change_order_status(websocket, data, manager)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono

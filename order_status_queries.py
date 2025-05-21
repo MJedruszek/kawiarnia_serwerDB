@@ -17,7 +17,7 @@ async def handle_get_all_statuses(websocket: WebSocket):
                     ID_o_status,
                     status
                 FROM order_status
-                ORDER BY status
+                ORDER BY ID_o_status
             """, )
 
             statuses = []

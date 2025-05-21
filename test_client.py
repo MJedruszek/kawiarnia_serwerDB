@@ -236,7 +236,7 @@ async def test_create_status():
         print("\nCreating new status...")
         await websocket.send(json.dumps({
             "action": "create_status",
-            "status": "Not ready"
+            "status": "In preparation"
         }))
         
         response = await websocket.recv()
@@ -269,10 +269,10 @@ async def test_delete_status(status_id):
             print("\nDeletion failed:")
             print(f"Reason: {data.get('message')}")
 
-# asyncio.get_event_loop().run_until_complete(test_statuses_query())
-# #asyncio.get_event_loop().run_until_complete(test_create_status())
-# asyncio.get_event_loop().run_until_complete(test_delete_status(2))
-# asyncio.get_event_loop().run_until_complete(test_statuses_query())
+#asyncio.get_event_loop().run_until_complete(test_statuses_query())
+#asyncio.get_event_loop().run_until_complete(test_create_status())
+#asyncio.get_event_loop().run_until_complete(test_delete_status(4))
+#asyncio.get_event_loop().run_until_complete(test_statuses_query())
 
                                     #DO Tables
 async def test_tables_query():
@@ -380,7 +380,7 @@ async def test_edit_table_state(table_id):
         else:
             print("Error:", data.get("message", "Unknown error"))
 
-# asyncio.get_event_loop().run_until_complete(test_tables_query())
+#asyncio.get_event_loop().run_until_complete(test_tables_query())
 # asyncio.get_event_loop().run_until_complete(test_create_table())
 # asyncio.get_event_loop().run_until_complete(test_edit_table(1))
 # asyncio.get_event_loop().run_until_complete(test_edit_table_state(3))
@@ -485,3 +485,156 @@ async def test_get_schedule_by_date(date):
 #asyncio.get_event_loop().run_until_complete(test_delete_schedule(5))
 #asyncio.get_event_loop().run_until_complete(test_get_schedule_by_date("2025-10-11"))
 #asyncio.get_event_loop().run_until_complete(test_get_schedule_by_staffID(1))
+
+                                    #ORDERS
+
+async def test_order_query():
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print("Requesting order data...")
+        await websocket.send(json.dumps({
+            "action": "get_all_orders"
+        }))
+
+        response = await websocket.recv()
+        data = json.loads(response)
+        print("Received data:")
+
+        if data.get("type") == "all_orders_data":
+            print("\nAll Orders:")
+            for order in data["data"]:
+                print(f"\nID: {order['ID_order']}")
+                print(f"Table ID: {order['ID_table']}")
+                print(f"Employee: {order['ID_employee']}, {order['employee']}")
+                print(f"Status: {order['ID_o_status']}, {order['o_status']}")
+                print(f"Price: {order['price']} zł")
+                print(f"Date: {order['date']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+        
+async def test_create_order():
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nCreating new order...")
+        await websocket.send(json.dumps({
+            "action": "create_order",
+            "ID_table": 3,
+            "price": 19.99,
+            "ID_employee": 1
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "orders_updated" and data.get("action") == "created":
+            print("\nNew Order Created:")
+            print(f"ID: {data['id']}")
+            print(f"Employee: {data['employee']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+async def test_delete_order(order_id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print(f"\nAttempting to delete order ID {order_id}...")
+
+        #wyślij request
+        await websocket.send(json.dumps({
+            "action": "delete_order",
+            "order_id": order_id
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+
+        if data.get("type") == "order_updated" and data.get("action") == "deleted":
+            print(f"\nSuccessfully deleted order ID {order_id}")
+        else:
+            print("\nDeletion failed:")
+            print(f"Reason: {data.get('message')}")
+
+async def test_edit_order(order_id):
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nEditing order...")
+        await websocket.send(json.dumps({
+            "action": "edit_order",
+            "ID_table": 1,
+            "ID_o_status": 2,
+            "price": 22.00,
+            "date": "2025-04-21 19:58:35",
+            "ID_employee": 4,
+            "id": order_id
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "orders_updated" and data.get("action") == "edited":
+            print("\nOrder Edited:")
+            print(f"ID: {data['id']}")
+            print(f"Employee: {data['ID_employee']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+
+async def test_get_order_by_statusID(id):
+    uri = "ws://localhost:8000/ws"
+
+    async with websockets.connect(uri) as websocket:
+        print("Requesting order data...")
+        await websocket.send(json.dumps({
+            "action": "get_orders_by_status",
+            "ID_status": id
+        }))
+
+        response = await websocket.recv()
+        data = json.loads(response)
+        print("Received data:")
+
+        if data.get("type") == "orders_by_status_data":
+            print(f"\nAll Orders with status:{data['status']}")
+            for order in data["data"]:
+                print(f"\nID: {order['ID_order']}")
+                print(f"Table ID: {order['ID_table']}")
+                print(f"Employee: {order['ID_employee']}, {order['employee']}")
+                print(f"Price: {order['price']} zł")
+                print(f"Date: {order['date']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+
+async def test_edit_order_status(order_id):
+    uri = "ws://localhost:8000/ws"
+    
+    async with websockets.connect(uri) as websocket:
+        print("\nEditing order status...")
+        await websocket.send(json.dumps({
+            "action": "change_order_status",
+            "id": order_id,
+            "ID_o_status": 2
+        }))
+        
+        response = await websocket.recv()
+        data = json.loads(response)
+        
+        if data.get("type") == "orders_updated" and data.get("action") == "edited":
+            print("\nOrder Edited:")
+            print(f"ID: {data['id']}")
+        else:
+            print("Error:", data.get("message", "Unknown error"))
+
+
+#asyncio.get_event_loop().run_until_complete(test_order_query())
+#asyncio.get_event_loop().run_until_complete(test_create_order())
+#asyncio.get_event_loop().run_until_complete(test_delete_order(4))
+#asyncio.get_event_loop().run_until_complete(test_edit_order(3))
+#asyncio.get_event_loop().run_until_complete(test_edit_order_status(5))
+asyncio.get_event_loop().run_until_complete(test_get_order_by_statusID(2))
+
+asyncio.get_event_loop().run_until_complete(test_order_query())
