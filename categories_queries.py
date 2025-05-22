@@ -24,8 +24,8 @@ async def handle_get_all_categories(websocket: WebSocket, data):
             #wstaw dane do tablicy categories
             for c in cursor.fetchall():
                 categories.append( {
-                    "id": c["ID_category"],
-                    "name": c["category_name"]
+                    "ID_category": c["ID_category"],
+                    "category_name": c["category_name"]
                 } )            
             #wyślij dane w postaci pliku json
             await websocket.send_json({
@@ -47,7 +47,7 @@ async def handle_create_category(websocket: WebSocket, data, manager):
             cursor.execute("START TRANSACTION")
             #dodajemy nowego pracownika
             cursor.execute("INSERT INTO Categories (category_name) "
-                "VALUE (%s)",(data['name'],))
+                "VALUE (%s)",(data['category_name'],))
                 
             new_id = cursor.lastrowid
             conn.commit()
@@ -55,8 +55,8 @@ async def handle_create_category(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "category_updated",
                 "action": "created",
-                "id": new_id,
-                "name": data['name'],
+                "ID_category": new_id,
+                "category_name": data['category_name'],
                 "requestID": data['requestID']
             })
 
@@ -69,7 +69,7 @@ async def handle_delete_category(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            category_id = data['category_id']
+            category_id = data['ID_category']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM Categories WHERE ID_category = %s", (category_id,))
 
@@ -87,7 +87,7 @@ async def handle_delete_category(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "category_updated",
                 "action": "deleted",
-                "id": category_id,
+                "ID_category": category_id,
                 "requestID": data['requestID']
             })
         except mysql.connector.Error as err:

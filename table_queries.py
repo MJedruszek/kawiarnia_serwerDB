@@ -26,7 +26,7 @@ async def handle_get_all_tables(websocket: WebSocket,data):
             #wstaw dane do tablicy categories
             for t in cursor.fetchall():
                 tables.append( {
-                    "id": t["ID_table"],
+                    "ID_table": t["ID_table"],
                     "outside": t["outside"],
                     "seats": t["seats"],
                     "is_empty": t["is_empty"]
@@ -59,7 +59,7 @@ async def handle_create_table(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "tables_updated",
                 "action": "created",
-                "id": new_id,
+                "ID_table": new_id,
                 "requestID": data['requestID']
             })
 
@@ -72,7 +72,7 @@ async def handle_delete_table(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            table_id = data['table_id']
+            table_id = data['ID_table']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM Tables WHERE ID_table = %s", (table_id,))
 
@@ -90,7 +90,7 @@ async def handle_delete_table(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "tables_updated",
                 "action": "deleted",
-                "id": table_id,
+                "ID_table": table_id,
                 "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
@@ -105,7 +105,7 @@ async def handle_edit_table(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            table_id = data['id']
+            table_id = data['ID_table']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM Tables WHERE ID_table = %s", (table_id,))
 
@@ -128,14 +128,14 @@ async def handle_edit_table(websocket: WebSocket, data, manager):
                         """,(
                             data['outside'],
                             data['seats'],
-                            data['id']))
+                            data['ID_table']))
 
             conn.commit()
             #informujemy o tym zainteresowanych
             await manager.broadcast({
                 "type": "tables_updated",
                 "action": "edited",
-                "id": table_id,
+                "ID_table": table_id,
                 "requestID": data['requestID']
             })
 
@@ -148,7 +148,7 @@ async def handle_change_table_state(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            table_id = data['id']
+            table_id = data['ID_table']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM Tables WHERE ID_table = %s", (table_id,))
 
@@ -168,14 +168,14 @@ async def handle_change_table_state(websocket: WebSocket, data, manager):
                             WHERE ID_table = %s
                         """,(
                             data['is_empty'],
-                            data['id']))
+                            data['ID_table']))
 
             conn.commit()
             #informujemy o tym zainteresowanych
             await manager.broadcast({
                 "type": "tables_updated",
                 "action": "edited",
-                "id": table_id,
+                "ID_table": table_id,
                 "requestID": data['requestID']
             })
 

@@ -24,7 +24,7 @@ async def handle_get_all_statuses(websocket: WebSocket, data):
             #wstaw dane do tablicy categories
             for s in cursor.fetchall():
                 statuses.append( {
-                    "id": s["ID_o_status"],
+                    "ID_o_status": s["ID_o_status"],
                     "status": s["status"]
                 } )            
             #wyślij dane w postaci pliku json
@@ -55,7 +55,7 @@ async def handle_create_status(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "status_updated",
                 "action": "created",
-                "id": new_id,
+                "ID_o_status": new_id,
                 "status": data['status'],
                 "requestID": data['requestID']
             })
@@ -76,7 +76,8 @@ async def handle_delete_status(websocket: WebSocket, data, manager):
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Category with ID {status_id} not found"
+                    "message": f"Category with ID {status_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -86,7 +87,7 @@ async def handle_delete_status(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "status_updated",
                 "action": "deleted",
-                "id": status_id,
+                "ID_o_status": status_id,
                 "requestID": data['requestID']
             })
         except mysql.connector.Error as err:

@@ -36,13 +36,13 @@ async def handle_get_products_for_orderID(websocket: WebSocket, data):
                     "ID_product": p["ID_product"],
                     "quantity": p["quantity"],
                     "price": p["price"],
-                    "product_name": product_name
+                    "product_name": product_name,
+                    "ID_order": ID_order
                 } )   
             
             await websocket.send_json({
                 "type": "products_by_orderID_data",
                 "data": products,
-                "ID_order": ID_order,
                 "requestID": data['requestID']
             })
                 
@@ -117,7 +117,7 @@ async def handle_create_product(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "orders_updated",
                 "action": "edited",
-                "id": order['ID_order'],
+                "ID_order": order['ID_order'],
                 "ID_employee": order['ID_employee'],
                 "requestID": data['requestID']
             })
@@ -130,8 +130,8 @@ async def handle_delete_product(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor(dictionary=True)
-            product_id = data['product_id']
-            order_id = data['order_id']
+            product_id = data['ID_product']
+            order_id = data['ID_order']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT price FROM Order_Products WHERE ID_product = %s AND ID_order = %s", (product_id,order_id,))
             op = cursor.fetchone()
@@ -197,7 +197,7 @@ async def handle_delete_product(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "orders_updated",
                 "action": "edited",
-                "id": order['ID_order'],
+                "ID_order": order['ID_order'],
                 "ID_employee": order['ID_employee'],
                 "requestID": data['requestID']
             })

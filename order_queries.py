@@ -82,8 +82,8 @@ async def handle_create_order(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "orders_updated",
                 "action": "created",
-                "id": new_id,
-                "employee": data['ID_employee'],
+                "ID_order": new_id,
+                "ID_employee": data['ID_employee'],
                 "requestID": data['requestID']
             })
 
@@ -96,7 +96,7 @@ async def handle_delete_order(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            order_id = data['order_id']
+            order_id = data['ID_order']
             #czy ten order jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM `Order` WHERE ID_order = %s", (order_id,))
 
@@ -114,7 +114,7 @@ async def handle_delete_order(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "order_updated",
                 "action": "deleted",
-                "id": order_id,
+                "ID_order": order_id,
                 "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
@@ -129,14 +129,15 @@ async def handle_edit_order(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            order_id = data['id']
+            order_id = data['ID_order']
             #czy ten order jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM `Order` WHERE ID_order = %s", (order_id,))
 
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Order with ID {order_id} not found"
+                    "message": f"Order with ID {order_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -213,13 +214,14 @@ async def handle_get_order_by_status(websocket: WebSocket, data):
                     "ID_employee": o["ID_employee"],
                     "employee": employee_name,
                     "price": o["price"],
+                    "ID_o_status": o["ID_o_status"],
+                    "status": status_name,
                     "date": str(o["date"])
                 } )   
             
             await websocket.send_json({
                 "type": "orders_by_status_data",
                 "data": orders,
-                "status": status_name,
                 "requestID": data['requestID']
             })
                 
@@ -235,14 +237,15 @@ async def handle_change_order_status(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            order_id = data['id']
+            order_id = data['ID_order']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM `Order` WHERE ID_order = %s", (order_id,))
 
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Order with ID {order_id} not found"
+                    "message": f"Order with ID {order_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -254,14 +257,14 @@ async def handle_change_order_status(websocket: WebSocket, data, manager):
                             WHERE ID_order = %s
                         """,(
                             data['ID_o_status'],
-                            data['id']))
+                            data['ID_order']))
 
             conn.commit()
             #informujemy o tym zainteresowanych
             await manager.broadcast({
                 "type": "orders_updated",
                 "action": "edited",
-                "id": order_id,
+                "ID_order": order_id,
                 "requestID": data['requestID']
             })
 

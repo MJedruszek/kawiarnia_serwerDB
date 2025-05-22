@@ -22,7 +22,7 @@ async def handle_create_schedule(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "schedule_updated",
                 "action": "created",
-                "id": new_id,
+                "ID_schedule": new_id,
                 "date": data['date'],
                 "ID_employee": data['ID_employee'],
                 "requestID": data['requestID']
@@ -37,7 +37,7 @@ async def handle_delete_schedule(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            schedule_id = data['schedule_id']
+            schedule_id = data['ID_schedule']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM Schedule WHERE ID_schedule = %s", (schedule_id,))
 
@@ -55,7 +55,7 @@ async def handle_delete_schedule(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "schedule_updated",
                 "action": "deleted",
-                "id": schedule_id,
+                "ID_schedule": schedule_id,
                 "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
@@ -71,7 +71,7 @@ async def handle_get_schedule_by_employeeID(websocket: WebSocket, data):
     with get_db() as conn:
         try:
             cursor = conn.cursor(dictionary=True)
-            employee_id = data['employee_id']
+            employee_id = data['ID_employee']
 
             cursor.execute("SELECT employee_name FROM Staff WHERE ID_employee = %s", (employee_id,))
             employee = cursor.fetchone()
@@ -99,15 +99,16 @@ async def handle_get_schedule_by_employeeID(websocket: WebSocket, data):
 
             for s in cursor.fetchall():
                 schedules.append( {
-                    "id": s["ID_schedule"],
+                    "ID_schedule": s["ID_schedule"],
                     "date": str(s["date"]),
-                    "shift": s["shift"]
+                    "shift": s["shift"],
+                    "employee_name": employee_name,
+                    "ID_employee": employee_id
                 } )   
             
             await websocket.send_json({
                 "type": "schedule_by_staff_data",
                 "data": schedules,
-                "name": employee_name,
                 "requestID": data['requestID']
             })
                 
@@ -147,7 +148,8 @@ async def handle_get_schedule_by_date(websocket: WebSocket, data):
                     "id": s["ID_schedule"],
                     "shift": s["shift"],
                     "employee_name": employee_name,
-                    "ID_employee": s["ID_employee"]
+                    "ID_employee": s["ID_employee"],
+                    "date": str(date)
                 } )   
             
             await websocket.send_json({

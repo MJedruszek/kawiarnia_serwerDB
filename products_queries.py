@@ -35,8 +35,8 @@ async def handle_get_all_products(websocket: WebSocket, data):
                 else:
                     category_name = "None"
                 products.append( {
-                    "id": p["ID_product"],
-                    "name": p["product_name"],
+                    "ID_product": p["ID_product"],
+                    "product_name": p["product_name"],
                     "price": p["price"],
                     "quantity": p["quantity"],
                     "prep_time": p["prep_time"],
@@ -61,7 +61,7 @@ async def handle_get_one_product(websocket: WebSocket, data):
     with get_db() as conn:
         try:
             cursor = conn.cursor(dictionary=True)
-            product_id = data['product_id']
+            product_id = data['ID_product']
 
             cursor.execute("""
                 SELECT 
@@ -87,8 +87,8 @@ async def handle_get_one_product(websocket: WebSocket, data):
                 await websocket.send_json({
                     "type": "product_details",
                     "data": {
-                        "id": product_id,
-                        "name": product["product_name"],
+                        "ID_product": product_id,
+                        "product_name": product["product_name"],
                         "price": product["price"],
                         "quantity": product["quantity"],
                         "prep_time": product["prep_time"],
@@ -121,7 +121,7 @@ async def handle_create_product(websocket: WebSocket, data, manager):
             #dodajemy nowego pracownika
             cursor.execute("INSERT INTO Products (product_name, price, quantity, ID_category, prep_time, expiration_date) "
                 "VALUES (%s, %s, %s, %s, %s, %s)",(
-                            data['name'],
+                            data['product_name'],
                             data['price'],
                             data['quantity'],
                             data['ID_category'],
@@ -134,8 +134,8 @@ async def handle_create_product(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "products_updated",
                 "action": "created",
-                "id": new_id,
-                "name": data['name'],
+                "ID_product": new_id,
+                "product_name": data['product_name'],
                 "requestID": data['requestID']
             })
 
@@ -148,14 +148,15 @@ async def handle_delete_product(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            product_id = data['product_id']
+            product_id = data['ID_product']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM Products WHERE ID_product = %s", (product_id,))
 
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Products with ID {product_id} not found"
+                    "message": f"Products with ID {product_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -165,7 +166,7 @@ async def handle_delete_product(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "products_updated",
                 "action": "deleted",
-                "id": product_id,
+                "ID_product": product_id,
                 "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
@@ -180,7 +181,7 @@ async def handle_edit_product(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            product_id = data['id']
+            product_id = data['ID_product']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM Products WHERE ID_product = %s", (product_id,))
 
@@ -204,21 +205,21 @@ async def handle_edit_product(websocket: WebSocket, data, manager):
                                 expiration_date = %s
                             WHERE ID_product = %s
                         """,(
-                            data['name'],
+                            data['product_name'],
                             data['price'],
                             data['quantity'],
                             data['ID_category'],
                             data['prep_time'],
                             data['expiration_date'],
-                            data['id']))
+                            data['ID_product']))
 
             conn.commit()
             #informujemy o tym zainteresowanych
             await manager.broadcast({
                 "type": "products_updated",
                 "action": "edited",
-                "id": product_id,
-                "name": data['name'],
+                "ID_product": product_id,
+                "product_name": data['product_name'],
                 "requestID": data['requestID']
             })
 
@@ -257,12 +258,14 @@ async def handle_get_products_by_category(websocket: WebSocket, data):
 
             for p in cursor.fetchall():
                 products.append( {
-                    "id": p["ID_product"],
-                    "name": p["product_name"],
+                    "ID_product": p["ID_product"],
+                    "product_name": p["product_name"],
                     "price": p["price"],
                     "quantity": p["quantity"],
                     "prep_time": p["prep_time"],
-                    "expiration_date": str(p["expiration_date"])
+                    "expiration_date": str(p["expiration_date"]),
+                    "ID_category": data["ID_category"],
+                    "category_name": category_name
                 } )   
             
             await websocket.send_json({
