@@ -7,7 +7,7 @@ import mysql.connector
 
 #Create + Read + Delete
 
-async def handle_get_all_statuses(websocket: WebSocket):
+async def handle_get_all_statuses(websocket: WebSocket, data):
     with get_db() as conn:
         try:
             cursor = conn.cursor(dictionary=True)
@@ -30,12 +30,14 @@ async def handle_get_all_statuses(websocket: WebSocket):
             #wyślij dane w postaci pliku json
             await websocket.send_json({
                 "type": "all_statuses_data",
-                "data": statuses
+                "data": statuses,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
 
 async def handle_create_status(websocket: WebSocket, data, manager):
@@ -54,7 +56,8 @@ async def handle_create_status(websocket: WebSocket, data, manager):
                 "type": "status_updated",
                 "action": "created",
                 "id": new_id,
-                "status": data['status']
+                "status": data['status'],
+                "requestID": data['requestID']
             })
 
             
@@ -83,11 +86,13 @@ async def handle_delete_status(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "status_updated",
                 "action": "deleted",
-                "id": status_id
+                "id": status_id,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             if conn: conn.rollback()
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })

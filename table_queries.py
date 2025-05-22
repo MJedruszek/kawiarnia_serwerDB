@@ -7,7 +7,7 @@ import mysql.connector
 
 #Create + Read + Delete + Update + Zmiana statusu stolika
 
-async def handle_get_all_tables(websocket: WebSocket):
+async def handle_get_all_tables(websocket: WebSocket,data):
     with get_db() as conn:
         try:
             cursor = conn.cursor(dictionary=True)
@@ -34,12 +34,14 @@ async def handle_get_all_tables(websocket: WebSocket):
             #wyślij dane w postaci pliku json
             await websocket.send_json({
                 "type": "all_tables_data",
-                "data": tables
+                "data": tables,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
 
 async def handle_create_table(websocket: WebSocket, data, manager):
@@ -57,7 +59,8 @@ async def handle_create_table(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "tables_updated",
                 "action": "created",
-                "id": new_id
+                "id": new_id,
+                "requestID": data['requestID']
             })
 
             
@@ -76,7 +79,8 @@ async def handle_delete_table(websocket: WebSocket, data, manager):
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Table with ID {table_id} not found"
+                    "message": f"Table with ID {table_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -86,13 +90,15 @@ async def handle_delete_table(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "tables_updated",
                 "action": "deleted",
-                "id": table_id
+                "id": table_id,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             if conn: conn.rollback()
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
 
 async def handle_edit_table(websocket: WebSocket, data, manager):
@@ -106,7 +112,8 @@ async def handle_edit_table(websocket: WebSocket, data, manager):
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Table with ID {table_id} not found"
+                    "message": f"Table with ID {table_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -128,7 +135,8 @@ async def handle_edit_table(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "tables_updated",
                 "action": "edited",
-                "id": table_id
+                "id": table_id,
+                "requestID": data['requestID']
             })
 
             
@@ -147,7 +155,8 @@ async def handle_change_table_state(websocket: WebSocket, data, manager):
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Table with ID {table_id} not found"
+                    "message": f"Table with ID {table_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -166,7 +175,8 @@ async def handle_change_table_state(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "tables_updated",
                 "action": "edited",
-                "id": table_id
+                "id": table_id,
+                "requestID": data['requestID']
             })
 
             

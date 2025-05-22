@@ -24,7 +24,8 @@ async def handle_create_schedule(websocket: WebSocket, data, manager):
                 "action": "created",
                 "id": new_id,
                 "date": data['date'],
-                "ID_employee": data['ID_employee']
+                "ID_employee": data['ID_employee'],
+                "requestID": data['requestID']
             })
 
             
@@ -43,7 +44,8 @@ async def handle_delete_schedule(websocket: WebSocket, data, manager):
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Schedule with ID {schedule_id} not found"
+                    "message": f"Schedule with ID {schedule_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -53,13 +55,15 @@ async def handle_delete_schedule(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "schedule_updated",
                 "action": "deleted",
-                "id": schedule_id
+                "id": schedule_id,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             if conn: conn.rollback()
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
 
 
@@ -76,7 +80,8 @@ async def handle_get_schedule_by_employeeID(websocket: WebSocket, data):
             else:
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Staff with ID {employee_id} not found"
+                    "message": f"Staff with ID {employee_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
 
@@ -102,7 +107,8 @@ async def handle_get_schedule_by_employeeID(websocket: WebSocket, data):
             await websocket.send_json({
                 "type": "schedule_by_staff_data",
                 "data": schedules,
-                "name": employee_name
+                "name": employee_name,
+                "requestID": data['requestID']
             })
                 
                 
@@ -146,12 +152,14 @@ async def handle_get_schedule_by_date(websocket: WebSocket, data):
             
             await websocket.send_json({
                 "type": "schedule_by_date_data",
-                "data": schedules
+                "data": schedules,
+                "requestID": data['requestID']
             })
                 
                 
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })

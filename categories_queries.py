@@ -7,7 +7,7 @@ import mysql.connector
 
 #Create + Read + Delete
 
-async def handle_get_all_categories(websocket: WebSocket):
+async def handle_get_all_categories(websocket: WebSocket, data):
     with get_db() as conn:
         try:
             cursor = conn.cursor(dictionary=True)
@@ -30,12 +30,14 @@ async def handle_get_all_categories(websocket: WebSocket):
             #wyślij dane w postaci pliku json
             await websocket.send_json({
                 "type": "all_category_data",
-                "data": categories
+                "data": categories,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
 
 async def handle_create_category(websocket: WebSocket, data, manager):
@@ -54,7 +56,8 @@ async def handle_create_category(websocket: WebSocket, data, manager):
                 "type": "category_updated",
                 "action": "created",
                 "id": new_id,
-                "name": data['name']
+                "name": data['name'],
+                "requestID": data['requestID']
             })
 
             
@@ -73,7 +76,8 @@ async def handle_delete_category(websocket: WebSocket, data, manager):
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Category with ID {category_id} not found"
+                    "message": f"Category with ID {category_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -83,11 +87,13 @@ async def handle_delete_category(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "category_updated",
                 "action": "deleted",
-                "id": category_id
+                "id": category_id,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             if conn: conn.rollback()
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })

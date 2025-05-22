@@ -42,14 +42,16 @@ async def handle_get_products_for_orderID(websocket: WebSocket, data):
             await websocket.send_json({
                 "type": "products_by_orderID_data",
                 "data": products,
-                "ID_order": ID_order
+                "ID_order": ID_order,
+                "requestID": data['requestID']
             })
                 
                 
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
 
 async def handle_create_product(websocket: WebSocket, data, manager):
@@ -70,7 +72,8 @@ async def handle_create_product(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "order_products_updated",
                 "action": "created",
-                "ID_order": data['ID_order']
+                "ID_order": data['ID_order'],
+                "requestID": data['requestID']
             })
 
             #Dodawanie ceny nowego produktu do Orderu:
@@ -115,7 +118,8 @@ async def handle_create_product(websocket: WebSocket, data, manager):
                 "type": "orders_updated",
                 "action": "edited",
                 "id": order['ID_order'],
-                "ID_employee": order['ID_employee']
+                "ID_employee": order['ID_employee'],
+                "requestID": data['requestID']
             })
             
         except mysql.connector.Error as err:
@@ -134,7 +138,8 @@ async def handle_delete_product(websocket: WebSocket, data, manager):
             if not op:
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Products with ID {product_id} and {order_id} not found"
+                    "message": f"Products with ID {product_id} and {order_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             oldprice = float(op["price"])
@@ -147,7 +152,8 @@ async def handle_delete_product(websocket: WebSocket, data, manager):
                 "type": "order_products_updated",
                 "action": "deleted",
                 "ID_product": product_id,
-                "ID_order": order_id
+                "ID_order": order_id,
+                "requestID": data['requestID']
             })
 
             #Odejmowanie ceny starego produktu od Orderu:
@@ -192,11 +198,13 @@ async def handle_delete_product(websocket: WebSocket, data, manager):
                 "type": "orders_updated",
                 "action": "edited",
                 "id": order['ID_order'],
-                "ID_employee": order['ID_employee']
+                "ID_employee": order['ID_employee'],
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             if conn: conn.rollback()
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })

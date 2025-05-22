@@ -7,7 +7,7 @@ import mysql.connector
 
 #pełny CRUD + getter po kategorii
 
-async def handle_get_all_products(websocket: WebSocket):
+async def handle_get_all_products(websocket: WebSocket, data):
     with get_db() as conn:
         try:
             cursor = conn.cursor(dictionary=True)
@@ -47,12 +47,14 @@ async def handle_get_all_products(websocket: WebSocket):
             #wyślij dane w postaci pliku json
             await websocket.send_json({
                 "type": "all_products_data",
-                "data": products
+                "data": products,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
             
 async def handle_get_one_product(websocket: WebSocket, data):
@@ -93,19 +95,22 @@ async def handle_get_one_product(websocket: WebSocket, data):
                         "expiration_date": str(product["expiration_date"]),
                         "ID_category": product["ID_category"],
                         "category_name": category_name
-                    } 
+                    } ,
+                    "requestID": data['requestID']
                 })
             else:
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Products with ID {product_id} not found"
+                    "message": f"Products with ID {product_id} not found",
+                    "requestID": data['requestID']
                 })
                 
                 
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
 
 async def handle_create_product(websocket: WebSocket, data, manager):
@@ -130,7 +135,8 @@ async def handle_create_product(websocket: WebSocket, data, manager):
                 "type": "products_updated",
                 "action": "created",
                 "id": new_id,
-                "name": data['name']
+                "name": data['name'],
+                "requestID": data['requestID']
             })
 
             
@@ -159,13 +165,15 @@ async def handle_delete_product(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "products_updated",
                 "action": "deleted",
-                "id": product_id
+                "id": product_id,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             if conn: conn.rollback()
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
 
 async def handle_edit_product(websocket: WebSocket, data, manager):
@@ -179,7 +187,8 @@ async def handle_edit_product(websocket: WebSocket, data, manager):
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Products with ID {product_id} not found"
+                    "message": f"Products with ID {product_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -209,7 +218,8 @@ async def handle_edit_product(websocket: WebSocket, data, manager):
                 "type": "products_updated",
                 "action": "edited",
                 "id": product_id,
-                "name": data['name']
+                "name": data['name'],
+                "requestID": data['requestID']
             })
 
             
@@ -258,12 +268,14 @@ async def handle_get_products_by_category(websocket: WebSocket, data):
             await websocket.send_json({
                 "type": "products_by_categories_data",
                 "data": products,
-                "category_name": category_name
+                "category_name": category_name,
+                "requestID": data['requestID']
             })
                 
                 
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })

@@ -7,7 +7,7 @@ import mysql.connector
 
 #pełny CRUD + getter konkretnego statusu i zmiana samego statusu
 
-async def handle_get_all_orders(websocket: WebSocket):
+async def handle_get_all_orders(websocket: WebSocket, data):
     with get_db() as conn:
         try:
             cursor = conn.cursor(dictionary=True)
@@ -52,12 +52,14 @@ async def handle_get_all_orders(websocket: WebSocket):
             #wyślij dane w postaci pliku json
             await websocket.send_json({
                 "type": "all_orders_data",
-                "data": orders
+                "data": orders,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
             
 #odebranie pojedynczego order będzie w order_products, tutaj niepotrzebne ze względu na brak możliwości wykorzystania
@@ -81,7 +83,8 @@ async def handle_create_order(websocket: WebSocket, data, manager):
                 "type": "orders_updated",
                 "action": "created",
                 "id": new_id,
-                "employee": data['ID_employee']
+                "employee": data['ID_employee'],
+                "requestID": data['requestID']
             })
 
             
@@ -100,7 +103,8 @@ async def handle_delete_order(websocket: WebSocket, data, manager):
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Order with ID {order_id} not found"
+                    "message": f"Order with ID {order_id} not found",
+                    "requestID": data['requestID']
                 })
                 return
             #jeśli tak, kontynuuj
@@ -110,13 +114,15 @@ async def handle_delete_order(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "order_updated",
                 "action": "deleted",
-                "id": order_id
+                "id": order_id,
+                "requestID": data['requestID']
             })
         except mysql.connector.Error as err:
             if conn: conn.rollback()
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
 
 async def handle_edit_order(websocket: WebSocket, data, manager):
@@ -158,7 +164,8 @@ async def handle_edit_order(websocket: WebSocket, data, manager):
                 "type": "orders_updated",
                 "action": "edited",
                 "id": order_id,
-                "ID_employee": data['ID_employee']
+                "ID_employee": data['ID_employee'],
+                "requestID": data['requestID']
             })
 
             
@@ -212,14 +219,16 @@ async def handle_get_order_by_status(websocket: WebSocket, data):
             await websocket.send_json({
                 "type": "orders_by_status_data",
                 "data": orders,
-                "status": status_name
+                "status": status_name,
+                "requestID": data['requestID']
             })
                 
                 
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
-                "message": f"Database error: {err}"
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
             })
 
 async def handle_change_order_status(websocket: WebSocket, data, manager):
@@ -252,7 +261,8 @@ async def handle_change_order_status(websocket: WebSocket, data, manager):
             await manager.broadcast({
                 "type": "orders_updated",
                 "action": "edited",
-                "id": order_id
+                "id": order_id,
+                "requestID": data['requestID']
             })
 
             

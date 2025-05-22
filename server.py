@@ -67,7 +67,7 @@ async def websocket_endpoint(websocket: WebSocket):
             #zajmij się requestem - każdy w osobnym ifie (nazwa requesta ta sama, co handler)
             #STAFF
             if data['action'] == 'get_all_staff':
-                await staff_queries.handle_get_all_staff(websocket)
+                await staff_queries.handle_get_all_staff(websocket, data)
             elif data['action'] == 'create_staff':
                 await staff_queries.handle_create_staff(websocket, data, manager)
             elif data['action'] == 'get_one_staff':
@@ -78,21 +78,21 @@ async def websocket_endpoint(websocket: WebSocket):
                 await staff_queries.handle_edit_staff(websocket, data, manager)
             #KATEGORIE
             elif data['action'] == 'get_all_categories':
-                await categories_queries.handle_get_all_categories(websocket)
+                await categories_queries.handle_get_all_categories(websocket, data)
             elif data['action'] == 'create_category':
                 await categories_queries.handle_create_category(websocket, data, manager)
             elif data['action'] == 'delete_category':
                 await categories_queries.handle_delete_category(websocket, data, manager)
             #STATUSY
             elif data['action'] == 'get_all_statuses':
-                await order_status_queries.handle_get_all_statuses(websocket)
+                await order_status_queries.handle_get_all_statuses(websocket,data)
             elif data['action'] == 'create_status':
                 await order_status_queries.handle_create_status(websocket, data, manager)
             elif data['action'] == 'delete_status':
                 await order_status_queries.handle_delete_status(websocket, data, manager)
             #STOLIKI
             elif data['action'] == 'get_all_tables':
-                await table_queries.handle_get_all_tables(websocket)
+                await table_queries.handle_get_all_tables(websocket, data)
             elif data['action'] == 'create_table':
                 await table_queries.handle_create_table(websocket, data, manager)
             elif data['action'] == 'delete_table':
@@ -112,7 +112,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await schedule_queries.handle_get_schedule_by_date(websocket, data)
             #ZAMÓWIENIA
             elif data['action'] == 'get_all_orders':
-                await order_queries.handle_get_all_orders(websocket)
+                await order_queries.handle_get_all_orders(websocket, data)
             elif data['action'] == 'create_order':
                 await order_queries.handle_create_order(websocket, data, manager)
             elif data['action'] == 'get_orders_by_status':
@@ -125,7 +125,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await order_queries.handle_change_order_status(websocket, data, manager)
             #PRODUKTY
             elif data['action'] == 'get_all_products':
-                await products_queries.handle_get_all_products(websocket)
+                await products_queries.handle_get_all_products(websocket, data)
             elif data['action'] == 'create_product':
                 await products_queries.handle_create_product(websocket, data, manager)
             elif data['action'] == 'get_products_by_category':
