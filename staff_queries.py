@@ -28,9 +28,9 @@ async def handle_get_all_staff(websocket: WebSocket,data):
             for s in cursor.fetchall():
                 staff_members.append( {
                     "ID_employee": s["ID_employee"],
-                    "name": s["employee_name"],
-                    "job": s["job_title"],
-                    "phone": s["phone_number"],
+                    "employee_name": s["employee_name"],
+                    "job_title": s["job_title"],
+                    "phone_number": s["phone_number"],
                     "mail": s["mail"]
                 } )            
             #wyślij dane w postaci pliku json
@@ -39,6 +39,7 @@ async def handle_get_all_staff(websocket: WebSocket,data):
                 "data": staff_members,
                 "requestID": data['requestID']
             })
+            print("Sent data")
         except mysql.connector.Error as err:
             await websocket.send_json({
                 "type": "error",
