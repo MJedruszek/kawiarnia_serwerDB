@@ -27,9 +27,9 @@ async def handle_get_all_tables(websocket: WebSocket,data):
             for t in cursor.fetchall():
                 tables.append( {
                     "ID_table": t["ID_table"],
-                    "outside": t["outside"],
+                    "outside": bool(t["outside"]),
                     "seats": t["seats"],
-                    "is_empty": t["is_empty"]
+                    "is_empty": bool(t["is_empty"])
                 } )            
             #wyślij dane w postaci pliku json
             await websocket.send_json({

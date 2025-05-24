@@ -130,13 +130,13 @@ async def test_edit_staff(staff_id):
             print("Error:", data.get("message", "Unknown error"))
 
 
-#asyncio.get_event_loop().run_until_complete(test_staff_query())
-#asyncio.get_event_loop().run_until_complete(test_create_staff())
+asyncio.get_event_loop().run_until_complete(test_staff_query())
+asyncio.get_event_loop().run_until_complete(test_create_staff())
 #asyncio.get_event_loop().run_until_complete(test_one_staff_query(2))
 #asyncio.get_event_loop().run_until_complete(test_delete_staff(2))
 #asyncio.get_event_loop().run_until_complete(test_staff_query())
 #asyncio.get_event_loop().run_until_complete(test_edit_staff(2))
-#asyncio.get_event_loop().run_until_complete(test_staff_query())
+asyncio.get_event_loop().run_until_complete(test_staff_query())
 
 
                                     #DO CATEGORIES
@@ -878,14 +878,14 @@ async def test_delete_order_product(product_id, order_id):
             print("\nDeletion failed:")
             print(f"Reason: {data.get('message')}")
 
-asyncio.get_event_loop().run_until_complete(test_order_query())
+#asyncio.get_event_loop().run_until_complete(test_order_query())
 # asyncio.get_event_loop().run_until_complete(test_products_query())
 
-asyncio.get_event_loop().run_until_complete(test_delete_order_product(2,3))
+#asyncio.get_event_loop().run_until_complete(test_delete_order_product(2,3))
 #asyncio.get_event_loop().run_until_complete(test_create_order_product())
 #asyncio.get_event_loop().run_until_complete(test_create_order_product())
 #asyncio.get_event_loop().run_until_complete(test_get_products_by_orderID(3))
 #asyncio.get_event_loop().run_until_complete(test_get_products_by_orderID(3))
-asyncio.get_event_loop().run_until_complete(test_order_query())
+#asyncio.get_event_loop().run_until_complete(test_order_query())
 
 

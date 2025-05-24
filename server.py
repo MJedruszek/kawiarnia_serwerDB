@@ -143,6 +143,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 await order_products_queries.handle_create_product(websocket, data, manager)
             elif data['action'] == 'delete_order_product':
                 await order_products_queries.handle_delete_product(websocket, data, manager)
+            elif data['action'] == 'get_order_by_id':
+                await order_queries.handle_get_order_byID(websocket, data)
             else:
                 print("Odebrano nieprawidłowy request")
     #Rozłączono

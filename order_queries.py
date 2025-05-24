@@ -272,3 +272,65 @@ async def handle_change_order_status(websocket: WebSocket, data, manager):
         except mysql.connector.Error as err:
             if conn: conn.rollback()
             print(f"Error: {err}")
+
+async def handle_get_order_byID(websocket: WebSocket, data):
+    with get_db() as conn:
+        try:
+            cursor = conn.cursor(dictionary=True)
+            order_id = data['ID_order']
+
+            cursor.execute("""
+                SELECT
+                    ID_table,
+                    ID_o_status,
+                    price,
+                    date,
+                    ID_employee
+                FROM `Order`
+                WHERE ID_order = %s
+
+            """, (order_id,))
+
+            order = cursor.fetchone()
+
+            if order:
+                cursor.execute("SELECT o_status FROM Order_Status WHERE ID_o_status = %s", (order["ID_o_status"],))
+                s = cursor.fetchone()
+                if s:
+                    s_name = s['o_status']
+                else:
+                    s_name = "None"
+                cursor.execute("SELECT employee_name FROM Staff WHERE ID_employee = %s", (order["ID_employee"],))
+                employee = cursor.fetchone()
+                if employee:
+                    employee_name = employee['employee_name']
+                else:
+                    employee_name = "None"
+                await websocket.send_json({
+                    "type": "order_details",
+                    "data": {
+                        "ID_order": order_id,
+                        "ID_table": order["ID_table"],
+                        "ID_employee": order["ID_employee"],
+                        "employee": employee_name,
+                        "price": order["price"],
+                        "ID_o_status": order["ID_o_status"],
+                        "o_status": s_name,
+                        "date": str(order["date"])
+                    } ,
+                    "requestID": data['requestID']
+                })
+            else:
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Order with ID {order_id} not found",
+                    "requestID": data['requestID']
+                })
+                
+                
+        except mysql.connector.Error as err:
+            await websocket.send_json({
+                "type": "error",
+                "message": f"Database error: {err}",
+                "requestID": data['requestID']
+            })
