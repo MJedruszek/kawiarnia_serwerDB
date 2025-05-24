@@ -294,10 +294,10 @@ async def handle_get_order_byID(websocket: WebSocket, data):
             order = cursor.fetchone()
 
             if order:
-                cursor.execute("SELECT o_status FROM Order_Status WHERE ID_o_status = %s", (order["ID_o_status"],))
+                cursor.execute("SELECT status FROM Order_Status WHERE ID_o_status = %s", (order["ID_o_status"],))
                 s = cursor.fetchone()
                 if s:
-                    s_name = s['o_status']
+                    s_name = s['status']
                 else:
                     s_name = "None"
                 cursor.execute("SELECT employee_name FROM Staff WHERE ID_employee = %s", (order["ID_employee"],))
