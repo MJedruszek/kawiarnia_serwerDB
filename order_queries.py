@@ -334,3 +334,28 @@ async def handle_get_order_byID(websocket: WebSocket, data):
                 "message": f"Database error: {err}",
                 "requestID": data['requestID']
             })
+
+async def handle_create_empty_order(websocket: WebSocket, data, manager):
+    with get_db() as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("START TRANSACTION")
+            #dodajemy nowy order, jedynie  ID_employee
+            cursor.execute("INSERT INTO `Order` (ID_table, ID_o_status, price, ID_employee) "
+                "VALUES (NULL, 1, 0, %s)",(data['ID_employee']))
+                
+            new_id = cursor.lastrowid
+            conn.commit()
+            #informujemy o tym zainteresowanych
+            await manager.broadcast({
+                "type": "orders_updated",
+                "action": "created",
+                "ID_order": new_id,
+                "ID_employee": data['ID_employee'],
+                "requestID": data['requestID']
+            })
+
+            
+        except mysql.connector.Error as err:
+            if conn: conn.rollback()
+            print(f"Error: {err}")
