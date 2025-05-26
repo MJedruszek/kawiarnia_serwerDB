@@ -125,6 +125,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 await order_queries.handle_change_order_status(websocket, data, manager)
             elif data['action'] == 'create_empty_order':
                 await order_queries.handle_create_empty_order(websocket, data, manager)
+            elif data['action'] == 'change_order_table':
+                await order_queries.handle_edit_order_table(websocket, data, manager)
             #PRODUKTY
             elif data['action'] == 'get_all_products':
                 await products_queries.handle_get_all_products(websocket, data)

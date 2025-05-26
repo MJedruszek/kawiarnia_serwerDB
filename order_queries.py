@@ -69,6 +69,17 @@ async def handle_create_order(websocket: WebSocket, data, manager):
         try:
             cursor = conn.cursor()
             cursor.execute("START TRANSACTION")
+            #sprawdzamy, czy stolik istnieje:
+            cursor.execute("SELECT 1 FROM Tables WHERE ID_table = %s", (data["ID_table"],))
+
+            if not cursor.fetchone():
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Order with table ID {data["ID_table"]} not found",
+                    "requestID": data['requestID']
+                })
+                return
+
             #dodajemy nowego pracownika
             cursor.execute("INSERT INTO `Order` (ID_table, ID_o_status, price, ID_employee) "
                 "VALUES (%s, 1, %s, %s)",(
@@ -140,6 +151,15 @@ async def handle_edit_order(websocket: WebSocket, data, manager):
                     "requestID": data['requestID']
                 })
                 return
+            cursor.execute("SELECT 1 FROM Tables WHERE ID_table = %s", (data['ID_table'],))
+            #Czy stolik istnieje? Jeśli nie, zwróć błąd
+            if not cursor.fetchone():
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Order with table ID {data['ID_table']} not found",
+                    "requestID": data['requestID']
+                })
+                return
             #jeśli tak, kontynuuj
             cursor.execute("START TRANSACTION")
             #edytujemy pracownika
@@ -157,14 +177,14 @@ async def handle_edit_order(websocket: WebSocket, data, manager):
                             data['price'],
                             data['date'],
                             data['ID_employee'],
-                            data['id']))
+                            data['ID_order']))
 
             conn.commit()
             #informujemy o tym zainteresowanych
             await manager.broadcast({
                 "type": "orders_updated",
                 "action": "edited",
-                "id": order_id,
+                "ID_order": order_id,
                 "ID_employee": data['ID_employee'],
                 "requestID": data['requestID']
             })
@@ -352,6 +372,55 @@ async def handle_create_empty_order(websocket: WebSocket, data, manager):
                 "action": "created",
                 "ID_order": new_id,
                 "ID_employee": data['ID_employee'],
+                "requestID": data['requestID']
+            })
+
+            
+        except mysql.connector.Error as err:
+            if conn: conn.rollback()
+            print(f"Error: {err}")
+
+async def handle_edit_order_table(websocket: WebSocket, data, manager):
+    with get_db() as conn:
+        try:
+            cursor = conn.cursor()
+            order_id = data['ID_order']
+            #czy ten order jest w bazie? jeśli nie, wyślij komunikat
+            cursor.execute("SELECT 1 FROM `Order` WHERE ID_order = %s", (order_id,))
+
+            if not cursor.fetchone():
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Order with ID {order_id} not found",
+                    "requestID": data['requestID']
+                })
+                return
+            cursor.execute("SELECT 1 FROM Tables WHERE ID_table = %s", (data['ID_table'],))
+            #Czy stolik istnieje? Jeśli nie, zwróć błąd
+            if not cursor.fetchone():
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Order with table ID {data['ID_table']} not found",
+                    "requestID": data['requestID']
+                })
+                return
+            #jeśli tak, kontynuuj
+            cursor.execute("START TRANSACTION")
+            #edytujemy pracownika
+            cursor.execute("""
+                            UPDATE `Order`
+                            SET ID_table = %s
+                            WHERE ID_order = %s
+                        """,(
+                            data['ID_table'],
+                            data['ID_order']))
+
+            conn.commit()
+            #informujemy o tym zainteresowanych
+            await manager.broadcast({
+                "type": "orders_updated",
+                "action": "edited",
+                "ID_order": order_id,
                 "requestID": data['requestID']
             })
 
