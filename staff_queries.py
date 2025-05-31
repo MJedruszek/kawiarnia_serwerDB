@@ -112,7 +112,7 @@ async def handle_create_staff(websocket: WebSocket, data, manager):
                 "type": "staff_updated",
                 "action": "created",
                 "ID_employee": new_id,
-                "employee_name": data['name'],
+                "employee_name": data['employee_name'],
                 "requestID": data['requestID']
             })
 
@@ -158,7 +158,7 @@ async def handle_edit_staff(websocket: WebSocket, data, manager):
     with get_db() as conn:
         try:
             cursor = conn.cursor()
-            staff_id = data['id']
+            staff_id = data['ID_employee']
             #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
             cursor.execute("SELECT 1 FROM Staff WHERE ID_employee = %s", (staff_id,))
 
