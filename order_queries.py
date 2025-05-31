@@ -75,7 +75,7 @@ async def handle_create_order(websocket: WebSocket, data, manager):
             if not cursor.fetchone():
                 await websocket.send_json({
                     "type": "error",
-                    "message": f"Order with table ID {data["ID_table"]} not found",
+                    "message": f"Order with table ID {data['ID_table']} not found",
                     "requestID": data['requestID']
                 })
                 return
