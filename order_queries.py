@@ -362,7 +362,7 @@ async def handle_create_empty_order(websocket: WebSocket, data, manager):
             cursor.execute("START TRANSACTION")
             #dodajemy nowy order, jedynie  ID_employee
             cursor.execute("INSERT INTO `Order` (ID_table, ID_o_status, price, ID_employee) "
-                "VALUES (NULL, 1, 0, %s)",(data['ID_employee']))
+                "VALUES (NULL, 1, 0, %s)",(data['ID_employee'],))
                 
             new_id = cursor.lastrowid
             conn.commit()
