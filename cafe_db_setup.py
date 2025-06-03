@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS Tables (
     is_empty BOOLEAN
 );
 """
+
 #do logowania
 db_config = {
     "host": "localhost",
@@ -110,6 +111,12 @@ def initialize(cursor):
     cursor.execute(create_table_schedule)
     cursor.execute(create_table_order)
     cursor.execute(create_table_order_products)
+    cursor.execute("""INSERT INTO Order_Status (ID_o_status, status) VALUES (1, "Just ordered") ON DUPLICATE KEY UPDATE status = "Just ordered";""")
+    cursor.execute("""INSERT INTO Order_Status (ID_o_status, status) VALUES (2, "Preparing") ON DUPLICATE KEY UPDATE status = "Preparing";""")
+    cursor.execute("""INSERT INTO Order_Status (ID_o_status, status) VALUES (3, "Ready") ON DUPLICATE KEY UPDATE status = "Ready";""")
+    cursor.execute("""INSERT INTO Order_Status (ID_o_status, status) VALUES (4, "Served") ON DUPLICATE KEY UPDATE status = "Served";""")
+    cursor.execute("""INSERT INTO Order_Status (ID_o_status, status) VALUES (5, "Paid") ON DUPLICATE KEY UPDATE status = "Paid";""")
+    cursor.execute("""INSERT INTO Order_Status (ID_o_status, status) VALUES (6, "Cancelled") ON DUPLICATE KEY UPDATE status = "Cancelled";""")
     
     
 
