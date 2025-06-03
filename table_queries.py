@@ -183,3 +183,34 @@ async def handle_change_table_state(websocket: WebSocket, data, manager):
         except mysql.connector.Error as err:
             if conn: conn.rollback()
             print(f"Error: {err}")
+
+async def get_table_state(websocket: WebSocket, data, manager):
+    with get_db() as conn:
+        try:
+            cursor = conn.cursor()
+            table_id = data['ID_table']
+            #czy ten pracownik jest w bazie? jeśli nie, wyślij komunikat
+            cursor.execute("SELECT 1 FROM Tables WHERE ID_table = %s", (table_id,))
+
+            if not cursor.fetchone():
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Table with ID {table_id} not found",
+                    "requestID": data['requestID']
+                })
+                return
+            
+            cursor.execute("SELECT is_empty FROM Tables WHERE ID_table = %s", (table_id,))
+
+            status = cursor.fetchone()
+            #informujemy o tym zainteresowanych
+            await manager.broadcast({
+                "type": "get_table_status",
+                "ID_status": status,
+                "requestID": data['requestID']
+            })
+
+            
+        except mysql.connector.Error as err:
+            if conn: conn.rollback()
+            print(f"Error: {err}")

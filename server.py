@@ -103,6 +103,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 await table_queries.handle_change_table_state(websocket, data, manager)
             elif data['action'] == 'get_order_by_tableID':
                 await order_queries.handle_get_order_by_table(websocket, data)
+            elif data['action'] == 'get_table_state':
+                await table_queries.get_table_state(websocket, data, manager)
             #SCHEDULE
             elif data['action'] == 'create_schedule':
                 await schedule_queries.handle_create_schedule(websocket, data, manager)
