@@ -456,7 +456,7 @@ async def handle_get_order_by_table(websocket: WebSocket, data):
                     s_name = s['status']
                 else:
                     s_name = "None"
-                cursor.execute("SELECT employee_name FROM Staff WHERE ID_employee = %s", (order["ID_employee"]))
+                cursor.execute("SELECT employee_name FROM Staff WHERE ID_employee = %s", (order["ID_employee"],))
                 employee = cursor.fetchone()
                 if employee:
                     employee_name = employee['employee_name']
@@ -466,7 +466,7 @@ async def handle_get_order_by_table(websocket: WebSocket, data):
                     "type": "order_details",
                     "data": {
                         "ID_order": order["ID_order"],
-                        "ID_table": order["ID_table"],
+                        "ID_table": data["ID_table"],
                         "ID_employee": order["ID_employee"],
                         "employee": employee_name,
                         "price": order["price"],
