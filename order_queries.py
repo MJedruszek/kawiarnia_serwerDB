@@ -471,7 +471,7 @@ async def handle_get_order_by_table(websocket: WebSocket, data):
                         "employee": employee_name,
                         "price": order["price"],
                         "ID_o_status": order["ID_o_status"],
-                        "status": s_name,
+                        "o_status": s_name,
                         "date": str(order["date"])
                     } ,
                     "requestID": data['requestID']
