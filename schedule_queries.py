@@ -145,7 +145,7 @@ async def handle_get_schedule_by_date(websocket: WebSocket, data):
                 else:
                     employee_name = "None"
                 schedules.append( {
-                    "id": s["ID_schedule"],
+                    "ID_schedule": s["ID_schedule"],
                     "shift": s["shift"],
                     "employee_name": employee_name,
                     "ID_employee": s["ID_employee"],
