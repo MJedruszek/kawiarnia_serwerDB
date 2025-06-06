@@ -440,7 +440,8 @@ async def handle_get_order_by_table(websocket: WebSocket, data):
                     ID_order,
                     price,
                     date,
-                    ID_employee
+                    ID_employee,
+                    ID_o_status
                 FROM `Order` 
                 WHERE ID_table = %s AND ID_o_status != 5 AND ID_o_status != 6 
 
